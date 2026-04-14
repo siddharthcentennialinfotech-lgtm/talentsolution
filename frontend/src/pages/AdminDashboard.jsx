@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import { Plus, Briefcase, Users, Eye, Edit, Trash2, Loader2, X, MapPin, DollarSign, Clock, GraduationCap, Phone, Download, Mail, FileText, Building2, CheckCircle2, ArrowRight, Globe } from 'lucide-react';
+import { Plus, Briefcase, Users, Eye, Edit, Trash2, Loader2, X, MapPin, DollarSign, Clock, GraduationCap, Phone, Download, Mail, FileText, Building2, CheckCircle2, ArrowRight, Globe, Lock, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import InrLogo from '../assets/inr-logo.jpg';
 
@@ -16,6 +16,7 @@ const AdminDashboard = () => {
     const [slotsToPurchase, setSlotsToPurchase] = useState(1);
     const [purchaseLoading, setPurchaseLoading] = useState(null);
     const [paymentLocation, setPaymentLocation] = useState('India');
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [formData, setFormData] = useState({
         job_id: `JOB${Math.floor(1000 + Math.random() * 9000)}`,
         title: '',
@@ -110,7 +111,7 @@ const AdminDashboard = () => {
     const handlePayPalCallback = async (token, slots) => {
         try {
             await api.post('/payment/capture-paypal', { token, slots });
-            alert(`Payment successful via PayPal! You've added ${slots} slots.`);
+            alert(`Payment successful via PayPal! You've added ${slots} listings.`);
             window.history.replaceState({}, document.title, window.location.pathname);
             fetchStats();
         } catch (err) {
@@ -130,7 +131,7 @@ const AdminDashboard = () => {
                     amount: order.amount,
                     currency: "INR",
                     name: "Centennial Infotech",
-                    description: `Purchase ${slotsToPurchase} job slots`,
+                    description: `Purchase ${slotsToPurchase} job listings`,
                     order_id: order.id,
                     handler: async function (response) {
                         try {
@@ -140,7 +141,7 @@ const AdminDashboard = () => {
                                 razorpay_signature: response.razorpay_signature,
                                 slots: slotsToPurchase
                             });
-                            alert(`Payment successful via Razorpay! You've added ${slotsToPurchase} slots.`);
+                            alert(`Payment successful via Razorpay! You've added ${slotsToPurchase} listings.`);
                             setShowPurchaseModal(false);
                             setSlotsToPurchase(1);
                             fetchStats();
@@ -182,7 +183,7 @@ const AdminDashboard = () => {
         setPurchaseLoading('sandbox');
         try {
             await api.post('/payment/capture-sandbox', { slots: slotsToPurchase });
-            alert(`Sandbox Payment successful! You've added ${slotsToPurchase} slots.`);
+            alert(`Sandbox Payment successful! You've added ${slotsToPurchase} listings.`);
             setShowPurchaseModal(false);
             setSlotsToPurchase(1);
             fetchStats();
@@ -309,79 +310,122 @@ const AdminDashboard = () => {
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-10">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+            <div className="flex flex-col md:flex-row md:items-start justify-between mb-8">
                 <div>
-                    <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Recruiter Dashboard</h1>
-                    <p className="text-lg text-slate-500 mt-2">Manage your job listings and track applications</p>
+                    <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Welcome Back, 👋</h1>
+                    <p className="text-[14px] text-slate-500 mt-1">Here is the summary of overall performance</p>
                 </div>
-                <button
-                    disabled={jobs.length >= adminStats.maxJobsAllowed}
-                    onClick={() => {
-                        setEditingJob(null);
-                        setFormData({
-                            job_id: `JOB${Math.floor(1000 + Math.random() * 9000)}`,
-                            title: '',
-                            description: '',
-                            company_name: '',
-                            location_city: '',
-                            salary_min: '',
-                            salary_max: '',
-                            currency: 'INR',
-                            job_type: 'full-time',
-                            work_mode: 'onsite',
-                            status: 'open',
-                            role: 'Software Development'
-                        });
-                        setShowModal(true);
-                    }}
-                    className={`py-4 px-8 flex items-center justify-center space-x-2 shadow-xl rounded-2xl ${jobs.length >= adminStats.maxJobsAllowed ? 'bg-slate-300 text-slate-500 cursor-not-allowed border-none' : 'btn-premium btn-premium-primary shadow-primary-200'}`}
-                >
-                    <Plus className="w-6 h-6" />
-                    <span className="text-lg font-bold">{jobs.length >= adminStats.maxJobsAllowed ? 'Quota Reached' : 'Post New Job'}</span>
-                </button>
+                <div className="flex items-center gap-4 mt-4 md:mt-0">
+                    <div className="relative">
+                        <button 
+                            onClick={() => setShowProfileMenu(!showProfileMenu)} 
+                            className="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-sm hover:bg-slate-300 transition-colors"
+                        >
+                            SU
+                        </button>
+                        <AnimatePresence>
+                            {showProfileMenu && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10 }} 
+                                    animate={{ opacity: 1, y: 0 }} 
+                                    exit={{ opacity: 0, y: 10 }} 
+                                    className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-premium py-2 z-[200]"
+                                >
+                                    <button 
+                                        onClick={() => { localStorage.clear(); navigate('/auth'); }}
+                                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-bold flex items-center gap-2 transition-colors"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        Log Out
+                                    </button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                    <button
+                        onClick={() => setShowPurchaseModal(true)}
+                        className="text-sm font-bold px-5 py-2.5 border border-slate-200 rounded-full hover:bg-slate-50 transition-colors text-slate-700 shadow-sm"
+                    >
+                        Listing Balance
+                    </button>
+                </div>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 {[
-                    { label: 'Active Listings', value: jobs.filter(j => j.status === 'open').length, icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
-                    { label: 'Total Candidates', value: jobs.reduce((acc, job) => acc + (job.applicationCount || 0), 0), icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
-                    { label: 'Jobs Posted', value: jobs.length, icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                    { label: 'Quota Remaining', value: Math.max(0, adminStats.maxJobsAllowed - jobs.length), icon: CheckCircle2, color: 'text-amber-600', bg: 'bg-amber-50', action: 'add_slots' }
+                    { label: 'Total Candidates', value: jobs.reduce((acc, job) => acc + (job.applicationCount || 0), 0), icon: Users, isDark: true, bg: 'bg-[#18345c]', color: 'text-blue-400' },
+                    { label: 'Active J&I', value: jobs.filter(j => j.status === 'open').length, icon: Briefcase, bg: 'bg-[#f4ebe6]', color: 'text-[#e55353]', subText: {label: 'Total Registrations', val: 0} },
+                    { label: 'Active Opportunities', value: jobs.length, icon: FileText, bg: 'bg-[#fdf4e4]', color: 'text-[#f5a623]', subText: {label: 'Total Registrations', val: 0} },
+                    { label: 'Listings Remaining', value: Math.max(0, adminStats.maxJobsAllowed - jobs.length), icon: CheckCircle2, bg: 'bg-[#ffefe6]', color: 'text-[#ff7f41]', action: 'add_listings' }
                 ].map((stat, i) => (
                     <motion.div
                         key={i}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-6"
+                        transition={{ delay: i * 0.05 }}
+                        className={`rounded-xl border flex flex-col justify-between overflow-hidden shadow-sm ${stat.isDark ? 'bg-[#0b1e3f] text-white border-transparent' : 'bg-white border-slate-200 text-slate-800'}`}
                     >
-                        <div className={`${stat.bg} ${stat.color} p-4 rounded-2xl`}>
-                            <stat.icon className="w-8 h-8" />
+                        <div className="p-5 flex-1 relative">
+                            <h3 className={`text-3xl font-bold mb-1 ${stat.isDark ? 'text-white' : 'text-slate-800'}`}>{stat.value}</h3>
+                            <p className={`text-[13px] font-medium ${stat.isDark ? 'text-slate-400' : 'text-slate-500'}`}>{stat.label}</p>
+                            <div className={`absolute top-5 right-5 ${stat.bg} ${stat.color} p-2 rounded-lg flex items-center justify-center`}>
+                                <stat.icon className="w-4 h-4" />
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
-                            <div className="flex items-center gap-3">
-                                <h3 className="text-3xl font-black text-slate-900">{stat.value}</h3>
-                                {stat.action === 'add_slots' && (
-                                    <button 
-                                        onClick={() => setShowPurchaseModal(true)}
-                                        className="p-1.5 bg-amber-100 text-amber-600 rounded-full hover:bg-amber-200 transition-colors shadow-sm"
-                                        title="Purchase more slots"
-                                    >
-                                        <Plus className="w-4 h-4" />
+                        {(stat.subText || stat.action) && (
+                            <div className={`px-5 pb-5 mt-auto pt-4 border-t ${stat.isDark ? 'border-slate-700/50' : 'border-slate-100'}`}>
+                                {stat.subText && (
+                                    <div className={`flex justify-between items-center text-[11px] font-medium ${stat.isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                        <span>{stat.subText.label}</span>
+                                        <span className="font-bold">{stat.subText.val}</span>
+                                    </div>
+                                )}
+                                {stat.action === 'add_listings' && (
+                                    <button onClick={() => setShowPurchaseModal(true)} className="w-full py-1.5 flex items-center justify-center gap-1.5 bg-orange-50 text-orange-600 hover:bg-orange-100 rounded text-xs font-bold transition-colors">
+                                        <Plus className="w-3 h-3" /> Purchase more
+                                    </button>
+                                )}
+                                {stat.action === 'unlock' && (
+                                    <button className="w-full py-1.5 flex items-center justify-center gap-1.5 bg-blue-50 text-blue-600 rounded text-xs font-bold hover:bg-blue-100 transition-colors">
+                                        <Lock className="w-3 h-3" /> Upgrade to unlock
                                     </button>
                                 )}
                             </div>
-                        </div>
+                        )}
                     </motion.div>
                 ))}
             </div>
 
             {/* Job Table */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-slate-900">Your Job Postings</h2>
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                    <h2 className="text-lg font-bold text-slate-800">Recent Listing</h2>
+                    <button
+                        disabled={jobs.length >= adminStats.maxJobsAllowed}
+                        onClick={() => {
+                            setEditingJob(null);
+                            setFormData({
+                                job_id: `JOB${Math.floor(1000 + Math.random() * 9000)}`,
+                                title: '',
+                                description: '',
+                                company_name: '',
+                                location_city: '',
+                                salary_min: '',
+                                salary_max: '',
+                                currency: 'INR',
+                                job_type: 'full-time',
+                                work_mode: 'onsite',
+                                status: 'open',
+                                role: 'Software Development'
+                            });
+                            setShowModal(true);
+                        }}
+                        className={`py-2 px-4 flex items-center justify-center space-x-1.5 rounded-lg text-sm font-bold ${jobs.length >= adminStats.maxJobsAllowed ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm'}`}
+                    >
+                        <Plus className="w-4 h-4" />
+                        <span>{jobs.length >= adminStats.maxJobsAllowed ? 'Listings Empty' : 'Post New'}</span>
+                    </button>
                 </div>
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-20">
@@ -392,13 +436,13 @@ const AdminDashboard = () => {
                     <div className="overflow-x-auto text-left">
                         <table className="w-full">
                             <thead>
-                                <tr className="bg-slate-50 border-b border-slate-100">
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Job Details</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Compensation</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Type</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-left">Posted On</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Actions</th>
+                                <tr className="bg-slate-50 border-b border-slate-100 text-left">
+                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Title / Details</th>
+                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Compensation</th>
+                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-center">Status</th>
+                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-center">Type</th>
+                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-left">Posted On</th>
+                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
@@ -785,8 +829,8 @@ const AdminDashboard = () => {
                         >
                             <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Increase Quota</h2>
-                                    <p className="text-slate-400 text-sm font-medium mt-1">Purchase more job slots</p>
+                                    <h2 className="text-[18px] font-semibold text-slate-800">Listing Balance</h2>
+                                    <p className="text-slate-500 text-xs mt-1">Purchase more job listings</p>
                                 </div>
                                 <button
                                     onClick={() => setShowPurchaseModal(false)}
@@ -798,7 +842,7 @@ const AdminDashboard = () => {
                             
                             <div className="p-8 space-y-6 bg-slate-50/50">
                                 <div className="space-y-4">
-                                    <label className="block text-sm font-black text-slate-700 uppercase tracking-widest text-center">How many slots do you need?</label>
+                                    <label className="block text-sm font-semibold text-slate-700 text-center">How many listings do you need?</label>
                                     <div className="flex items-center justify-center gap-6">
                                         <button 
                                             onClick={() => setSlotsToPurchase(Math.max(1, slotsToPurchase - 1))}
@@ -814,7 +858,7 @@ const AdminDashboard = () => {
                                             +
                                         </button>
                                     </div>
-                                    <p className="text-center text-slate-500 font-medium">✨ {paymentLocation === 'India' ? '₹50' : '$1'} per slot</p>
+                                    <p className="text-center text-slate-500 text-sm">✨ {paymentLocation === 'India' ? '₹50' : '$1'} per listing</p>
                                 </div>
 
                                 <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
