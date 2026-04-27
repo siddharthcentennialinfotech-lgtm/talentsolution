@@ -9,6 +9,7 @@ const {
     getProfile,
     updateProfile,
     verifyEmail,
+    verifyOTP,
     resetPassword,
     socialLogin
 } = require('../controllers/authController');
@@ -28,6 +29,7 @@ router.get('/user/:id', protect, getUserProfileById);
 
 // Forgot Password Routes
 router.post('/forgot-password/verify-email', verifyEmail);
+router.post('/forgot-password/verify-otp', verifyOTP);
 router.post('/forgot-password/reset', resetPassword);
 
 // Social Auth Routes

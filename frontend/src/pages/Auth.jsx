@@ -143,11 +143,13 @@ const Auth = () => {
                     }
                     return;
                 } else if (fpStep === 2) {
-                    if (formData.otp === '123456') {
+                    const { data } = await api.post('/auth/forgot-password/verify-otp', {
+                        email: formData.email,
+                        otp: formData.otp,
+                    });
+                    if (data.success) {
                         toast.success('OTP Verified');
                         setFpStep(3);
-                    } else {
-                        setError('Invalid OTP. Please enter 123456');
                     }
                     return;
                 } else if (fpStep === 3) {
@@ -491,7 +493,7 @@ const Auth = () => {
                                                 type="text"
                                                 required
                                                 className="w-full bg-slate-50/50 border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-medium tracking-widest"
-                                                placeholder="123456"
+                                                placeholder="OTP"
                                                 value={formData.otp}
                                                 onChange={handleChange}
                                             />
