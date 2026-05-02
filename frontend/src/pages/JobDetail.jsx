@@ -25,6 +25,65 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import InrLogo from '../assets/inr-logo.jpg';
 
+const generateJobSchema = (job) => {
+    const getEmploymentType = (type) => {
+        const typeMap = {
+            'full-time': 'FULL_TIME',
+            'part-time': 'PART_TIME',
+            'contract': 'CONTRACTOR',
+            'internship': 'INTERN',
+            'freelance': 'OTHER'
+        };
+        return typeMap[type?.toLowerCase()] || 'FULL_TIME';
+    };
+
+    const postDate = new Date(job.createdAt);
+    const validThrough = new Date(postDate.setMonth(postDate.getMonth() + 3)).toISOString().split('T')[0];
+
+    return {
+        "@context": "https://schema.org/",
+        "@type": "JobPosting",
+        "title": job.title,
+        "description": `
+            ${job.description || ""}
+            ${job.requirements ? "<h3>Requirements</h3><p>" + job.requirements + "</p>" : ""}
+            ${job.responsibilities ? "<h3>Responsibilities</h3><p>" + job.responsibilities + "</p>" : ""}
+        `,
+        "identifier": {
+            "@type": "PropertyValue",
+            "name": job.company_name,
+            "value": job._id
+        },
+        "datePosted": new Date(job.createdAt).toISOString().split('T')[0],
+        "validThrough": validThrough,
+        "employmentType": getEmploymentType(job.job_type),
+        "hiringOrganization": {
+            "@type": "Organization",
+            "name": job.company_name,
+            "sameAs": "https://centennial.com",
+            "logo": "https://centennial.com/logo.png"
+        },
+        "jobLocation": {
+            "@type": "Place",
+            "address": {
+                "@type": "PostalAddress",
+                "addressLocality": job.location_city,
+                "addressCountry": job.country || "IN"
+            }
+        },
+        "baseSalary": job.salary_min && job.salary_max ? {
+            "@type": "MonetaryAmount",
+            "currency": job.currency || "INR",
+            "value": {
+                "@type": "QuantitativeValue",
+                "minValue": Number(job.salary_min),
+                "maxValue": Number(job.salary_max),
+                "unitText": "YEAR"
+            }
+        } : undefined
+    };
+};
+
 const JobDetail = () => {
     // Centralized currency display logic
     const renderCurrencySymbol = (currencyCode, size = 'w-5 h-5') => {
@@ -74,6 +133,23 @@ const JobDetail = () => {
         };
         fetchJob();
     }, [id]);
+
+    useEffect(() => {
+        if (job) {
+            const script = document.createElement('script');
+            script.type = 'application/ld+json';
+            script.id = 'job-posting-schema';
+            script.text = JSON.stringify(generateJobSchema(job));
+            document.head.appendChild(script);
+
+            return () => {
+                const existingScript = document.getElementById('job-posting-schema');
+                if (existingScript) {
+                    document.head.removeChild(existingScript);
+                }
+            };
+        }
+    }, [job]);
 
     const handleApplyClick = async () => {
         if (!token) {
