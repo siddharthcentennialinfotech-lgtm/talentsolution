@@ -1,9 +1,131 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import { Plus, Briefcase, Users, Eye, Edit, Trash2, Loader2, X, MapPin, DollarSign, Clock, GraduationCap, Phone, Download, Mail, FileText, Building2, CheckCircle2, ArrowRight, Globe, Lock, LogOut } from 'lucide-react';
+import { Plus, Briefcase, Users, Eye, Edit, Trash2, Loader2, X, MapPin, DollarSign, Clock, GraduationCap, Phone, Download, Mail, FileText, Building2, CheckCircle2, ArrowRight, Globe, Lock, LogOut, Bold, Italic, Underline, List, ListOrdered, RemoveFormatting } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import InrLogo from '../assets/inr-logo.jpg';
+
+const RichTextEditor = ({ value, onChange }) => {
+    const editorRef = React.useRef(null);
+    const [states, setStates] = React.useState({ bold: false, italic: false, underline: false, ul: false, ol: false });
+
+    React.useEffect(() => {
+        if (editorRef.current && editorRef.current.innerHTML !== value) {
+            if (document.activeElement !== editorRef.current) {
+                editorRef.current.innerHTML = value || '';
+            }
+        }
+    }, [value]);
+
+    const updateStates = () => {
+        try {
+            setStates({
+                bold: document.queryCommandState('bold'),
+                italic: document.queryCommandState('italic'),
+                underline: document.queryCommandState('underline'),
+                ul: document.queryCommandState('insertUnorderedList'),
+                ol: document.queryCommandState('insertOrderedList'),
+            });
+        } catch (e) {}
+    };
+
+    const handleAction = (e, cmd, val = null) => {
+        e.preventDefault();
+        if (editorRef.current) {
+            editorRef.current.focus();
+        }
+        document.execCommand(cmd, false, val);
+        if (editorRef.current) {
+            onChange(editorRef.current.innerHTML);
+        }
+        setTimeout(updateStates, 10);
+    };
+
+    return (
+        <div className="border-2 border-slate-100 rounded-2xl overflow-hidden bg-slate-50 focus-within:border-primary-500 focus-within:bg-white transition-all duration-300">
+            <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-100 border-b border-slate-200 text-slate-700 select-none">
+                <button
+                    type="button"
+                    onMouseDown={(e) => handleAction(e, 'bold')}
+                    className={`p-1.5 rounded text-xs transition-all ${states.bold ? 'bg-primary-600 text-white font-bold shadow-sm' : 'hover:bg-white hover:shadow-sm font-bold'}`}
+                    title="Bold"
+                >
+                    <Bold className="w-4 h-4" />
+                </button>
+                <button
+                    type="button"
+                    onMouseDown={(e) => handleAction(e, 'italic')}
+                    className={`p-1.5 rounded text-xs transition-all ${states.italic ? 'bg-primary-600 text-white font-bold shadow-sm' : 'hover:bg-white hover:shadow-sm italic'}`}
+                    title="Italic"
+                >
+                    <Italic className="w-4 h-4" />
+                </button>
+                <button
+                    type="button"
+                    onMouseDown={(e) => handleAction(e, 'underline')}
+                    className={`p-1.5 rounded text-xs transition-all ${states.underline ? 'bg-primary-600 text-white font-bold shadow-sm' : 'hover:bg-white hover:shadow-sm underline'}`}
+                    title="Underline"
+                >
+                    <Underline className="w-4 h-4" />
+                </button>
+                <div className="w-px h-4 bg-slate-300 mx-1" />
+                <button
+                    type="button"
+                    onMouseDown={(e) => handleAction(e, 'insertUnorderedList')}
+                    className={`p-1.5 rounded text-xs transition-all ${states.ul ? 'bg-primary-600 text-white font-bold shadow-sm' : 'hover:bg-white hover:shadow-sm'}`}
+                    title="Bullet List"
+                >
+                    <List className="w-4 h-4" />
+                </button>
+                <button
+                    type="button"
+                    onMouseDown={(e) => handleAction(e, 'insertOrderedList')}
+                    className={`p-1.5 rounded text-xs transition-all ${states.ol ? 'bg-primary-600 text-white font-bold shadow-sm' : 'hover:bg-white hover:shadow-sm'}`}
+                    title="Numbered List"
+                >
+                    <ListOrdered className="w-4 h-4" />
+                </button>
+                <div className="w-px h-4 bg-slate-300 mx-1" />
+                <button
+                    type="button"
+                    onMouseDown={(e) => handleAction(e, 'formatBlock', '<h3>')}
+                    className="px-2 py-1 hover:bg-white hover:shadow-sm rounded text-xs font-bold transition-all"
+                    title="Heading 3"
+                >
+                    H3
+                </button>
+                <button
+                    type="button"
+                    onMouseDown={(e) => handleAction(e, 'formatBlock', '<p>')}
+                    className="px-2 py-1 hover:bg-white hover:shadow-sm rounded text-xs transition-all"
+                    title="Paragraph"
+                >
+                    P
+                </button>
+                <button
+                    type="button"
+                    onMouseDown={(e) => handleAction(e, 'removeFormat')}
+                    className="p-1.5 hover:bg-white hover:shadow-sm rounded text-xs text-red-500 transition-all"
+                    title="Clear Formatting"
+                >
+                    <RemoveFormatting className="w-4 h-4" />
+                </button>
+            </div>
+            <div
+                ref={editorRef}
+                contentEditable
+                className="w-full min-h-[150px] max-h-[300px] overflow-y-auto p-4 outline-none text-slate-700 leading-relaxed text-sm font-normal [&_b]:font-bold [&_b]:text-slate-900 [&_strong]:font-bold [&_strong]:text-slate-900 [&_i]:italic [&_em]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:my-2"
+                onInput={() => {
+                    if (editorRef.current) {
+                        onChange(editorRef.current.innerHTML);
+                    }
+                }}
+                onKeyUp={updateStates}
+                onMouseUp={updateStates}
+            />
+        </div>
+    );
+};
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -753,14 +875,9 @@ const AdminDashboard = () => {
                                     <div className="space-y-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
                                         <div className="space-y-2">
                                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left">Full Job Description</label>
-                                            <textarea
-                                                name="description"
+                                            <RichTextEditor
                                                 value={formData.description}
-                                                required
-                                                rows="5"
-                                                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 px-6 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-medium text-slate-600 resize-none leading-relaxed"
-                                                placeholder="Describe the overall mission and value proposition..."
-                                                onChange={handleChange}
+                                                onChange={(val) => setFormData(prev => ({ ...prev, description: val }))}
                                             />
                                         </div>
                                         <div className="grid md:grid-cols-2 gap-8">

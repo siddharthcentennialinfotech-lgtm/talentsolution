@@ -364,11 +364,10 @@ const JobDetail = () => {
                                 <FileText className="w-6 h-6 mr-3 text-primary-600" />
                                 Job Overview
                             </h2>
-                            <div className="prose prose-slate max-w-none">
-                                <p className="text-slate-600 text-lg leading-relaxed whitespace-pre-line font-medium">
-                                    {job.description}
-                                </p>
-                            </div>
+                            <div
+                                className="text-slate-600 text-lg leading-relaxed font-medium prose prose-slate max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_h3]:text-xl [&_h3]:font-black [&_h3]:mt-4 [&_h3]:mb-2 [&_b]:font-black [&_b]:text-slate-900 [&_strong]:font-black [&_strong]:text-slate-900 [&_*[style*='bold']]:font-black [&_*[style*='700']]:font-black"
+                                dangerouslySetInnerHTML={{ __html: job.description }}
+                            />
 
                             {job.requirements && (
                                 <div className="mt-12 pt-12 border-t border-slate-100">

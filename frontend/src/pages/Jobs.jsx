@@ -327,7 +327,7 @@ const Jobs = () => {
 
                                             <div className="mt-6 pt-6 border-t border-slate-50 flex justify-between items-center">
                                                 <p className="text-slate-500 text-sm line-clamp-2 max-w-lg">
-                                                    {job.description}
+                                                    {job.description?.replace(/<[^>]*>/g, '')}
                                                 </p>
                                                 <Link
                                                     to={`/jobs/${job._id}`}
