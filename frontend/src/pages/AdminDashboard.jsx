@@ -172,11 +172,13 @@ const AdminDashboard = () => {
     const fetchCategories = async (selectName = null) => {
         try {
             const { data } = await api.get('/jobs/categories/all');
-            setCategories(data);
-            setFormData(prev => {
-                const target = selectName || (data.some(c => c.name === prev.role) ? prev.role : (data[0]?.name || ''));
-                return { ...prev, role: target };
-            });
+            if (Array.isArray(data)) {
+                setCategories(data);
+                setFormData(prev => {
+                    const target = selectName || (data.some(c => c.name === prev.role) ? prev.role : (data[0]?.name || ''));
+                    return { ...prev, role: target };
+                });
+            }
         } catch (err) {}
     };
 

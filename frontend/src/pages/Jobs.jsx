@@ -25,8 +25,12 @@ const Jobs = () => {
 
     useEffect(() => {
         api.get('/jobs/categories/all')
-            .then(res => setCategories(res.data))
-            .catch(() => {});
+            .then(res => {
+                if (Array.isArray(res.data)) {
+                    setCategories(res.data);
+                }
+            })
+            .catch(err => console.error('Error fetching categories:', err));
     }, []);
 
     // Application state

@@ -10,13 +10,9 @@ const protect = async (req, res, next) => {
         req.headers.authorization.startsWith('Bearer')
     ) {
         try {
-            // Get token from header
             token = req.headers.authorization.split(' ')[1];
-
-            // Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // Add user/admin from payload to request
             if (decoded.role === 'admin') {
                 req.user = await Admin.findById(decoded.id).select('-password');
                 req.role = 'admin';
@@ -25,24 +21,25 @@ const protect = async (req, res, next) => {
                 req.role = 'user';
             }
 
-            next();
+            if (!req.user) {
+                return res.status(401).json({ message: 'User not found or session expired' });
+            }
+
+            return next();
         } catch (error) {
-            console.error(error);
-            res.status(401).json({ message: 'Not authorized, token failed' });
+            console.error('Auth error:', error.message);
+            return res.status(401).json({ message: 'Not authorized, token failed' });
         }
     }
 
-    if (!token) {
-        res.status(401).json({ message: 'Not authorized, no token' });
-    }
+    return res.status(401).json({ message: 'Not authorized, no token provided' });
 };
 
 const adminOnly = (req, res, next) => {
     if (req.user && req.role === 'admin') {
-        next();
-    } else {
-        res.status(403).json({ message: 'Not authorized as an admin' });
+        return next();
     }
+    return res.status(403).json({ message: 'Not authorized as an admin' });
 };
 
 module.exports = { protect, adminOnly };
