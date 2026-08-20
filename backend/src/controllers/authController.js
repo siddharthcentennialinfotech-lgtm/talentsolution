@@ -222,13 +222,13 @@ const generateOtpEmailHtml = (otp, name = 'User') => {
     <body>
         <div class="container">
             <div class="header">
-                <h1>Centennial Talent Solutions</h1>
+                <h1>Centennial InfoTech Solutions</h1>
                 <p>Security & Account Verification</p>
             </div>
             <div class="content">
                 <div class="greeting">Hello ${name},</div>
                 <div class="message">
-                    We received a request to reset the password for your Centennial Talent Solutions account. Please use the verification code below to complete the reset process:
+                    We received a request to reset the password for your Centennial InfoTech Solutions account. Please use the verification code below to complete the reset process:
                 </div>
                 <div class="otp-box">
                     <div class="otp-label">Verification Code (OTP)</div>
@@ -240,7 +240,7 @@ const generateOtpEmailHtml = (otp, name = 'User') => {
                 </div>
             </div>
             <div class="footer">
-                &copy; ${new Date().getFullYear()} Centennial Talent Solutions. All rights reserved.
+                &copy; ${new Date().getFullYear()} Centennial InfoTech Solutions. All rights reserved.
             </div>
         </div>
     </body>
@@ -277,37 +277,37 @@ exports.verifyEmail = async (req, res) => {
         const name = user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user.name || 'User');
 
         const transporter = nodemailer.createTransport({
-            host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-            port: Number(process.env.EMAIL_PORT) || 587,
-            secure: Number(process.env.EMAIL_PORT) === 465,
+            service: 'gmail',
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: (process.env.EMAIL_PASS || '').replace(/\s+/g, '')
-            }
+            },
+            connectionTimeout: 8000,
+            greetingTimeout: 8000,
+            socketTimeout: 10000
         });
 
         const mailOptions = {
-            from: `"Centennial Talent Solutions" <${process.env.EMAIL_USER || 'no-reply@centennialtalentsolutions.com'}>`,
+            from: `"Centennial InfoTech Solutions" <${process.env.EMAIL_USER || 'no-reply@centennialinfotech.com'}>`,
             to: email,
-            subject: '🔐 Password Reset Verification Code - Centennial Talent Solutions',
+            subject: '🔐 Password Reset Verification Code - Centennial InfoTech Solutions',
             text: `Your OTP for password reset is: ${otp}\n\nIt is valid for 10 minutes.\nIf you did not request this, please ignore this email.`,
             html: generateOtpEmailHtml(otp, name)
         };
 
         if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-            try {
-                await transporter.sendMail(mailOptions);
-                console.log(`Password reset OTP email successfully sent to ${email}`);
-            } catch (mailError) {
+            transporter.sendMail(mailOptions).then(info => {
+                console.log(`Password reset OTP email successfully sent to ${email} (MessageId: ${info.messageId})`);
+            }).catch(mailError => {
                 console.error("Nodemailer send error:", mailError.message);
-            }
+            });
         } else {
             console.log("Email credentials not provided in .env, skipping email send. Generated OTP:", otp);
         }
 
-        res.json({ success: true, message: 'OTP sent to email', role: foundRole });
+        return res.json({ success: true, message: 'OTP sent to email', role: foundRole });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: error.message });
     }
 };
 
