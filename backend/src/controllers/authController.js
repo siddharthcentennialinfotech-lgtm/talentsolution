@@ -277,7 +277,9 @@ exports.verifyEmail = async (req, res) => {
         const name = user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user.name || 'User');
 
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+            port: Number(process.env.EMAIL_PORT) || 465,
+            secure: Number(process.env.EMAIL_PORT) !== 587,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: (process.env.EMAIL_PASS || '').replace(/\s+/g, '')
