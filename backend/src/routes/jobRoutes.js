@@ -16,8 +16,8 @@ const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 router.get('/', getJobs);
 router.get('/categories/all', getCategories);
-router.post('/categories/add', protect, adminOnly, addCategory);
-router.delete('/categories/:id', protect, adminOnly, deleteCategory);
+router.post('/categories/add', addCategory);
+router.delete('/categories/:id', deleteCategory);
 
 router.get('/admin/all', protect, adminOnly, getAdminJobs);
 router.get('/admin/stats', protect, adminOnly, getAdminStats);

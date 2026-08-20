@@ -210,8 +210,9 @@ const AdminDashboard = () => {
 
     const handleDeleteCategory = async (id, name) => {
         try {
-            if (id) {
-                await api.delete(`/jobs/categories/${id}`);
+            const target = id || name;
+            if (target) {
+                await api.delete(`/jobs/categories/${encodeURIComponent(target)}`);
             }
             const updated = categories.filter(c => (c._id !== id && (c.name || c) !== name));
             setCategories(updated);

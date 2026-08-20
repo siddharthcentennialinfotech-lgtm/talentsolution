@@ -267,11 +267,11 @@ exports.addCategory = async (req, res) => {
         if (!name || !name.trim()) {
             return res.status(400).json({ message: 'Category name is required' });
         }
-        const existing = await Category.findOne({ name: name.trim() });
-        if (existing) {
-            return res.status(400).json({ message: 'Category already exists' });
+        const trimmed = name.trim();
+        let category = await Category.findOne({ name: { $regex: new RegExp(`^${trimmed}$`, 'i') } });
+        if (!category) {
+            category = await Category.create({ name: trimmed });
         }
-        const category = await Category.create({ name: name.trim() });
         res.status(201).json(category);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -280,7 +280,11 @@ exports.addCategory = async (req, res) => {
 
 exports.deleteCategory = async (req, res) => {
     try {
-        await Category.findByIdAndDelete(req.params.id);
+        const { id } = req.params;
+        if (id) {
+            const isObjectId = id.match(/^[0-9a-fA-F]{24}$/);
+            await Category.findOneAndDelete(isObjectId ? { _id: id } : { name: id });
+        }
         res.json({ message: 'Category deleted' });
     } catch (error) {
         res.status(500).json({ message: error.message });
