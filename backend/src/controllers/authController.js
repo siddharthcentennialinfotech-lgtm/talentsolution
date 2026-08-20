@@ -194,6 +194,60 @@ exports.updateProfile = async (req, res) => {
 };// @desc    Verify email for password reset
 // @route   POST /api/auth/forgot-password/verify-email
 // @access  Public
+const generateOtpEmailHtml = (otp, name = 'User') => {
+    return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Password Reset OTP</title>
+        <style>
+            body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; }
+            .container { max-width: 580px; margin: 30px auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
+            .header { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%); padding: 36px 30px; text-align: center; color: #ffffff; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+            .header p { margin: 6px 0 0; font-size: 14px; opacity: 0.85; }
+            .content { padding: 36px 32px; }
+            .greeting { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 12px; }
+            .message { font-size: 15px; line-height: 1.6; color: #475569; margin-bottom: 24px; }
+            .otp-box { background: #f8fafc; border: 2px dashed #93c5fd; border-radius: 16px; padding: 24px; text-align: center; margin: 24px 0; }
+            .otp-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; margin-bottom: 8px; }
+            .otp-code { font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #1e3a8a; font-family: monospace; }
+            .expiry-badge { display: inline-block; background: #fee2e2; color: #dc2626; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; margin-top: 12px; }
+            .security-note { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 14px 18px; border-radius: 0 12px 12px 0; font-size: 13px; color: #475569; line-height: 1.5; margin: 24px 0 0; }
+            .footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 30px; text-align: center; font-size: 12px; color: #94a3b8; line-height: 1.5; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Centennial Talent Solutions</h1>
+                <p>Security & Account Verification</p>
+            </div>
+            <div class="content">
+                <div class="greeting">Hello ${name},</div>
+                <div class="message">
+                    We received a request to reset the password for your Centennial Talent Solutions account. Please use the verification code below to complete the reset process:
+                </div>
+                <div class="otp-box">
+                    <div class="otp-label">Verification Code (OTP)</div>
+                    <div class="otp-code">${otp}</div>
+                    <div><span class="expiry-badge">⏱️ Valid for 10 minutes</span></div>
+                </div>
+                <div class="security-note">
+                    <strong>Security Notice:</strong> Never share this code with anyone. If you did not request a password reset, you can safely ignore this email — your account remains completely secure.
+                </div>
+            </div>
+            <div class="footer">
+                &copy; ${new Date().getFullYear()} Centennial Talent Solutions. All rights reserved.
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+};
+
 exports.verifyEmail = async (req, res) => {
     try {
         const { email } = req.body;
@@ -213,33 +267,40 @@ exports.verifyEmail = async (req, res) => {
             return res.status(404).json({ message: 'No account found with this email' });
         }
 
-        // Generate OTP: random letter + number
-        const otp = Math.random().toString(36).substring(2, 8).toUpperCase(); 
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // Store in memory for 10 mins
         otpStore.set(email, {
             otp,
             expiresAt: Date.now() + 10 * 60 * 1000
         });
 
-        // Send email
+        const name = user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user.name || 'User');
+
         const transporter = nodemailer.createTransport({
-            service: 'gmail', 
+            host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+            port: Number(process.env.EMAIL_PORT) || 587,
+            secure: Number(process.env.EMAIL_PORT) === 465,
             auth: {
                 user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
+                pass: (process.env.EMAIL_PASS || '').replace(/\s+/g, '')
             }
         });
 
         const mailOptions = {
-            from: process.env.EMAIL_USER || 'no-reply@examples.com',
+            from: `"Centennial Talent Solutions" <${process.env.EMAIL_USER || 'no-reply@centennialtalentsolutions.com'}>`,
             to: email,
-            subject: 'Password Reset OTP',
-            text: `Your OTP for password reset is: ${otp}\n\nIt is valid for 10 minutes.\nIf you did not request this, please ignore this email.`
+            subject: '🔐 Password Reset Verification Code - Centennial Talent Solutions',
+            text: `Your OTP for password reset is: ${otp}\n\nIt is valid for 10 minutes.\nIf you did not request this, please ignore this email.`,
+            html: generateOtpEmailHtml(otp, name)
         };
 
         if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-            await transporter.sendMail(mailOptions);
+            try {
+                await transporter.sendMail(mailOptions);
+                console.log(`Password reset OTP email successfully sent to ${email}`);
+            } catch (mailError) {
+                console.error("Nodemailer send error:", mailError.message);
+            }
         } else {
             console.log("Email credentials not provided in .env, skipping email send. Generated OTP:", otp);
         }
