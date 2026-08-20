@@ -158,14 +158,48 @@ const AdminDashboard = () => {
         role: 'Software Development'
     });
     const [editingJob, setEditingJob] = useState(null);
+    const [categories, setCategories] = useState([]);
+    const [newCategoryName, setNewCategoryName] = useState('');
 
-    // Centralized currency display logic
     const renderCurrencySymbol = (currencyCode, size = 'w-5 h-5') => {
         const code = String(currencyCode || 'INR').trim().toUpperCase();
         if (code === 'INR') {
             return <img src={InrLogo} alt="INR" className={`${size} rounded-full object-cover border border-slate-100 flex-shrink-0`} />;
         }
         return <span className="text-slate-900 font-black">$</span>;
+    };
+
+    const fetchCategories = async (selectName = null) => {
+        try {
+            const { data } = await api.get('/jobs/categories/all');
+            setCategories(data);
+            setFormData(prev => {
+                const target = selectName || (data.some(c => c.name === prev.role) ? prev.role : (data[0]?.name || ''));
+                return { ...prev, role: target };
+            });
+        } catch (err) {}
+    };
+
+    const handleAddCategory = async (e) => {
+        e.preventDefault();
+        const name = newCategoryName.trim();
+        if (!name) return;
+        try {
+            const { data } = await api.post('/jobs/categories/add', { name });
+            setNewCategoryName('');
+            await fetchCategories(data.name);
+        } catch (err) {
+            alert(err.response?.data?.message || 'Error adding category');
+        }
+    };
+
+    const handleDeleteCategory = async (id) => {
+        try {
+            await api.delete(`/jobs/categories/${id}`);
+            await fetchCategories();
+        } catch (err) {
+            alert('Error deleting category');
+        }
     };
 
     const fetchAdminJobs = async () => {
@@ -192,6 +226,7 @@ const AdminDashboard = () => {
     useEffect(() => {
         fetchAdminJobs();
         fetchStats();
+        fetchCategories();
 
         // Detect user location for pricing
         const detectLocation = async () => {
@@ -704,7 +739,7 @@ const AdminDashboard = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="space-y-2 mt-6">
+                                    <div className="space-y-3 mt-6">
                                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Job Role / Category</label>
                                         <div className="relative group">
                                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary-500 transition-colors">
@@ -717,10 +752,43 @@ const AdminDashboard = () => {
                                                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none"
                                                 onChange={handleChange}
                                             >
-                                                {['UI/UX Design', 'Web Development', 'App Development', 'Quality Assurance', 'Software Development', 'IT Consulting'].map(role => (
-                                                    <option key={role} value={role}>{role}</option>
+                                                {categories.map(cat => (
+                                                    <option key={cat._id || cat.name} value={cat.name}>{cat.name}</option>
                                                 ))}
                                             </select>
+                                        </div>
+                                        <div className="pt-2 space-y-3">
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Add new role / category..."
+                                                    value={newCategoryName}
+                                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                                    className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-xl py-2 px-3 text-xs font-bold text-slate-700 outline-none focus:border-primary-500"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={handleAddCategory}
+                                                    className="bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-sm"
+                                                >
+                                                    Add Category
+                                                </button>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2 pt-1">
+                                                {categories.map(cat => (
+                                                    <span key={cat._id || cat.name} className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-700">
+                                                        {cat.name}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDeleteCategory(cat._id)}
+                                                            className="text-slate-400 hover:text-red-500 transition-colors"
+                                                            title="Delete category"
+                                                        >
+                                                            <Trash2 className="w-3 h-3" />
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
                                 </section>

@@ -7,18 +7,24 @@ const {
     updateJob,
     deleteJob,
     getAdminJobs,
-    getAdminStats
+    getAdminStats,
+    getCategories,
+    addCategory,
+    deleteCategory
 } = require('../controllers/jobController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
-// Public Routes
 router.get('/', getJobs);
-router.get('/:id', getJobById);
+router.get('/categories/all', getCategories);
+router.post('/categories/add', protect, adminOnly, addCategory);
+router.delete('/categories/:id', protect, adminOnly, deleteCategory);
 
-// Admin Only Routes
-router.post('/', protect, adminOnly, createJob);
 router.get('/admin/all', protect, adminOnly, getAdminJobs);
 router.get('/admin/stats', protect, adminOnly, getAdminStats);
+
+router.get('/:id', getJobById);
+
+router.post('/', protect, adminOnly, createJob);
 router.put('/:id', protect, adminOnly, updateJob);
 router.delete('/:id', protect, adminOnly, deleteJob);
 

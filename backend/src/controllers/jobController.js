@@ -2,6 +2,7 @@ const Job = require('../models/Job');
 const Company = require('../models/Company');
 const Skill = require('../models/Skill');
 const Application = require('../models/Application');
+const Category = require('../models/Category');
 
 // @desc    Create a new job
 // @route   POST /api/jobs
@@ -245,3 +246,44 @@ exports.getAdminStats = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+exports.getCategories = async (req, res) => {
+    try {
+        let categories = await Category.find().sort({ name: 1 });
+        if (categories.length === 0) {
+            const defaults = ['UI/UX Design', 'Web Development', 'App Development', 'Quality Assurance', 'Software Development', 'IT Consulting'];
+            await Category.insertMany(defaults.map(name => ({ name })));
+            categories = await Category.find().sort({ name: 1 });
+        }
+        res.json(categories);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.addCategory = async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name || !name.trim()) {
+            return res.status(400).json({ message: 'Category name is required' });
+        }
+        const existing = await Category.findOne({ name: name.trim() });
+        if (existing) {
+            return res.status(400).json({ message: 'Category already exists' });
+        }
+        const category = await Category.create({ name: name.trim() });
+        res.status(201).json(category);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.deleteCategory = async (req, res) => {
+    try {
+        await Category.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Category deleted' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+

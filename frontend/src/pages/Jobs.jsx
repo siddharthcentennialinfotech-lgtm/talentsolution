@@ -21,6 +21,13 @@ const Jobs = () => {
     const [location, setLocation] = useState('');
     const [jobType, setJobType] = useState('');
     const [selectedRole, setSelectedRole] = useState('');
+    const [categories, setCategories] = useState([]);
+
+    useEffect(() => {
+        api.get('/jobs/categories/all')
+            .then(res => setCategories(res.data))
+            .catch(() => {});
+    }, []);
 
     // Application state
     const [selectedJob, setSelectedJob] = useState(null);
@@ -235,17 +242,29 @@ const Jobs = () => {
                             Job Category
                         </h3>
                         <div className="space-y-3">
-                            {['', 'UI/UX Design', 'Web Development', 'App Development', 'Quality Assurance', 'Software Development', 'IT Consulting'].map((cat) => (
-                                <label key={cat} className="flex items-center group cursor-pointer">
+                            <label className="flex items-center group cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="jobcategory"
+                                    checked={selectedRole === ''}
+                                    onChange={() => setSelectedRole('')}
+                                    className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-slate-300"
+                                />
+                                <span className="ml-3 text-slate-600 group-hover:text-primary-600">
+                                    All Categories
+                                </span>
+                            </label>
+                            {categories.map((cat) => (
+                                <label key={cat._id || cat.name} className="flex items-center group cursor-pointer">
                                     <input
                                         type="radio"
                                         name="jobcategory"
-                                        checked={selectedRole === cat}
-                                        onChange={() => setSelectedRole(cat)}
+                                        checked={selectedRole === cat.name}
+                                        onChange={() => setSelectedRole(cat.name)}
                                         className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-slate-300"
                                     />
                                     <span className="ml-3 text-slate-600 group-hover:text-primary-600">
-                                        {cat === '' ? 'All Categories' : cat}
+                                        {cat.name}
                                     </span>
                                 </label>
                             ))}

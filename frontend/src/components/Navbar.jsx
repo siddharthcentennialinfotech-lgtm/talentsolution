@@ -30,7 +30,7 @@ const Navbar = () => {
                 <div className="hidden md:flex items-center gap-8">
                     <Link to="/" className={`text-sm font-medium transition-colors ${location.pathname === '/' ? 'text-brand-blue' : 'text-text-muted hover:text-brand-blue'}`}>Home</Link>
                     <Link to="/jobs" className={`text-sm font-medium transition-colors ${location.pathname === '/jobs' ? 'text-brand-blue' : 'text-text-muted hover:text-brand-blue'}`}>Find jobs</Link>
-                    
+
                     {token ? (
                         <div className="flex items-center gap-6">
                             {role === 'admin' ? (

@@ -410,14 +410,30 @@ const JobDetail = () => {
                                     <div className="w-12 h-12 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center flex-shrink-0">
                                         {renderCurrencySymbol(job.currency, 'w-8 h-8')}
                                     </div>
-                                    <div>
+                                    <div className="min-w-0 flex-1">
                                         <p className="text-slate-400 text-xs font-black uppercase tracking-widest mb-1 text-left">Annual Compensation</p>
-                                        <div className="text-2xl font-black text-slate-900 flex items-center gap-2">
-                                            {renderCurrencySymbol(job.currency, 'w-6 h-6')}
-                                            <span>{Number(job.salary_min || 0).toLocaleString()}</span>
-                                            <span className="text-slate-200">-</span>
-                                            {renderCurrencySymbol(job.currency, 'w-5 h-5')}
-                                            <span>{Number(job.salary_max || 0).toLocaleString()}</span>
+                                        <div className="text-left">
+                                            {(() => {
+                                                const s1 = Number(job.salary_min || 0);
+                                                const s2 = Number(job.salary_max || 0);
+                                                const minSal = s1 && s2 ? Math.min(s1, s2) : (s1 || s2);
+                                                const maxSal = s1 && s2 ? Math.max(s1, s2) : (s1 || s2);
+
+                                                return (
+                                                    <div className="flex items-center whitespace-nowrap gap-1 font-black text-slate-900 text-base sm:text-lg">
+                                                        {renderCurrencySymbol(job.currency, 'w-4 h-4 sm:w-5 sm:h-5')}
+                                                        <span>{minSal.toLocaleString()}</span>
+                                                        {minSal !== maxSal && (
+                                                            <>
+                                                                <span className="text-slate-300 font-normal mx-0.5">–</span>
+                                                                {renderCurrencySymbol(job.currency, 'w-4 h-4 sm:w-5 sm:h-5')}
+                                                                <span>{maxSal.toLocaleString()}</span>
+                                                            </>
+                                                        )}
+                                                        <span className="text-slate-400 text-xs font-bold uppercase tracking-wider ml-1">/yr</span>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 </div>

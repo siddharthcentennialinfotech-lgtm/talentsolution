@@ -17,6 +17,7 @@ require('./models/Job');
 require('./models/Application');
 require('./models/Company');
 require('./models/Skill');
+require('./models/Category');
 
 const app = express();
 
