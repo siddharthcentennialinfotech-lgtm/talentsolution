@@ -250,17 +250,24 @@ const generateOtpEmailHtml = (otp, name = 'User') => {
 
 exports.verifyEmail = async (req, res) => {
     try {
-        const { email } = req.body;
-        if (!email) {
+        const { email } = req.body || {};
+        if (!email || !email.trim()) {
             return res.status(400).json({ message: 'Email is required' });
         }
 
-        let user = await User.findOne({ email });
+        const cleanEmail = email.trim().toLowerCase();
+
+        let user = null;
         let foundRole = 'user';
 
-        if (!user) {
-            user = await Admin.findOne({ email });
-            foundRole = 'admin';
+        try {
+            user = await User.findOne({ email: cleanEmail }).maxTimeMS(4000);
+            if (!user) {
+                user = await Admin.findOne({ email: cleanEmail }).maxTimeMS(4000);
+                if (user) foundRole = 'admin';
+            }
+        } catch (dbErr) {
+            console.error('DB query error:', dbErr.message);
         }
 
         if (!user) {
@@ -269,7 +276,7 @@ exports.verifyEmail = async (req, res) => {
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         
-        otpStore.set(email, {
+        otpStore.set(cleanEmail, {
             otp,
             expiresAt: Date.now() + 10 * 60 * 1000
         });
@@ -284,14 +291,14 @@ exports.verifyEmail = async (req, res) => {
                 user: process.env.EMAIL_USER,
                 pass: (process.env.EMAIL_PASS || '').replace(/\s+/g, '')
             },
-            connectionTimeout: 8000,
-            greetingTimeout: 8000,
-            socketTimeout: 10000
+            connectionTimeout: 5000,
+            greetingTimeout: 5000,
+            socketTimeout: 5000
         });
 
         const mailOptions = {
             from: `"Centennial InfoTech Solutions" <${process.env.EMAIL_USER || 'no-reply@centennialinfotech.com'}>`,
-            to: email,
+            to: cleanEmail,
             subject: '🔐 Password Reset Verification Code - Centennial InfoTech Solutions',
             text: `Your OTP for password reset is: ${otp}\n\nIt is valid for 10 minutes.\nIf you did not request this, please ignore this email.`,
             html: generateOtpEmailHtml(otp, name)
@@ -299,12 +306,10 @@ exports.verifyEmail = async (req, res) => {
 
         if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
             transporter.sendMail(mailOptions).then(info => {
-                console.log(`Password reset OTP email successfully sent to ${email} (MessageId: ${info.messageId})`);
+                console.log(`Password reset OTP email successfully sent to ${cleanEmail} (MessageId: ${info.messageId})`);
             }).catch(mailError => {
                 console.error("Nodemailer send error:", mailError.message);
             });
-        } else {
-            console.log("Email credentials not provided in .env, skipping email send. Generated OTP:", otp);
         }
 
         return res.json({ success: true, message: 'OTP sent to email', role: foundRole });
