@@ -21,16 +21,26 @@ const Jobs = () => {
     const [location, setLocation] = useState('');
     const [jobType, setJobType] = useState('');
     const [selectedRole, setSelectedRole] = useState('');
-    const [categories, setCategories] = useState([]);
+    const [categories, setCategories] = useState(() => {
+        try {
+            const saved = localStorage.getItem('job_categories');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            }
+        } catch (e) {}
+        return ['UI/UX Design', 'Web Development', 'App Development', 'Quality Assurance', 'Software Development', 'IT Consulting'].map(name => ({ name }));
+    });
 
     useEffect(() => {
         api.get('/jobs/categories/all')
             .then(res => {
-                if (Array.isArray(res.data)) {
+                if (Array.isArray(res.data) && res.data.length > 0) {
                     setCategories(res.data);
+                    localStorage.setItem('job_categories', JSON.stringify(res.data));
                 }
             })
-            .catch(err => console.error('Error fetching categories:', err));
+            .catch(() => {});
     }, []);
 
     // Application state
@@ -258,20 +268,24 @@ const Jobs = () => {
                                     All Categories
                                 </span>
                             </label>
-                            {categories.map((cat) => (
-                                <label key={cat._id || cat.name} className="flex items-center group cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        name="jobcategory"
-                                        checked={selectedRole === cat.name}
-                                        onChange={() => setSelectedRole(cat.name)}
-                                        className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-slate-300"
-                                    />
-                                    <span className="ml-3 text-slate-600 group-hover:text-primary-600">
-                                        {cat.name}
-                                    </span>
-                                </label>
-                            ))}
+                            {categories.map((cat) => {
+                                const name = typeof cat === 'string' ? cat : (cat.name || '');
+                                const id = typeof cat === 'object' && cat._id ? cat._id : name;
+                                return (
+                                    <label key={id} className="flex items-center group cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="jobcategory"
+                                            checked={selectedRole === name}
+                                            onChange={() => setSelectedRole(name)}
+                                            className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-slate-300"
+                                        />
+                                        <span className="ml-3 text-slate-600 group-hover:text-primary-600">
+                                            {name}
+                                        </span>
+                                    </label>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

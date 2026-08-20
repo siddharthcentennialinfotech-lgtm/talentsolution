@@ -158,7 +158,16 @@ const AdminDashboard = () => {
         role: 'Software Development'
     });
     const [editingJob, setEditingJob] = useState(null);
-    const [categories, setCategories] = useState([]);
+    const [categories, setCategories] = useState(() => {
+        try {
+            const saved = localStorage.getItem('job_categories');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            }
+        } catch (e) {}
+        return ['UI/UX Design', 'Web Development', 'App Development', 'Quality Assurance', 'Software Development', 'IT Consulting'].map(name => ({ name }));
+    });
     const [newCategoryName, setNewCategoryName] = useState('');
 
     const renderCurrencySymbol = (currencyCode, size = 'w-5 h-5') => {
@@ -172,10 +181,11 @@ const AdminDashboard = () => {
     const fetchCategories = async (selectName = null) => {
         try {
             const { data } = await api.get('/jobs/categories/all');
-            if (Array.isArray(data)) {
+            if (Array.isArray(data) && data.length > 0) {
                 setCategories(data);
+                localStorage.setItem('job_categories', JSON.stringify(data));
                 setFormData(prev => {
-                    const target = selectName || (data.some(c => c.name === prev.role) ? prev.role : (data[0]?.name || ''));
+                    const target = selectName || (data.some(c => (c.name || c) === prev.role) ? prev.role : (data[0]?.name || data[0] || ''));
                     return { ...prev, role: target };
                 });
             }
@@ -189,15 +199,23 @@ const AdminDashboard = () => {
         try {
             const { data } = await api.post('/jobs/categories/add', { name });
             setNewCategoryName('');
+            const updated = [...categories.filter(c => (c.name || c) !== name), data];
+            setCategories(updated);
+            localStorage.setItem('job_categories', JSON.stringify(updated));
             await fetchCategories(data.name);
         } catch (err) {
             alert(err.response?.data?.message || 'Error adding category');
         }
     };
 
-    const handleDeleteCategory = async (id) => {
+    const handleDeleteCategory = async (id, name) => {
         try {
-            await api.delete(`/jobs/categories/${id}`);
+            if (id) {
+                await api.delete(`/jobs/categories/${id}`);
+            }
+            const updated = categories.filter(c => (c._id !== id && (c.name || c) !== name));
+            setCategories(updated);
+            localStorage.setItem('job_categories', JSON.stringify(updated));
             await fetchCategories();
         } catch (err) {
             alert('Error deleting category');
@@ -754,9 +772,11 @@ const AdminDashboard = () => {
                                                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none"
                                                 onChange={handleChange}
                                             >
-                                                {categories.map(cat => (
-                                                    <option key={cat._id || cat.name} value={cat.name}>{cat.name}</option>
-                                                ))}
+                                                {categories.map(cat => {
+                                                    const name = typeof cat === 'string' ? cat : (cat.name || '');
+                                                    const id = typeof cat === 'object' && cat._id ? cat._id : name;
+                                                    return <option key={id} value={name}>{name}</option>;
+                                                })}
                                             </select>
                                         </div>
                                         <div className="pt-2 space-y-3">
@@ -777,19 +797,23 @@ const AdminDashboard = () => {
                                                 </button>
                                             </div>
                                             <div className="flex flex-wrap gap-2 pt-1">
-                                                {categories.map(cat => (
-                                                    <span key={cat._id || cat.name} className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-700">
-                                                        {cat.name}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleDeleteCategory(cat._id)}
-                                                            className="text-slate-400 hover:text-red-500 transition-colors"
-                                                            title="Delete category"
-                                                        >
-                                                            <Trash2 className="w-3 h-3" />
-                                                        </button>
-                                                    </span>
-                                                ))}
+                                                {categories.map(cat => {
+                                                    const name = typeof cat === 'string' ? cat : (cat.name || '');
+                                                    const id = typeof cat === 'object' ? cat._id : null;
+                                                    return (
+                                                        <span key={id || name} className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-700">
+                                                            {name}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteCategory(id, name)}
+                                                                className="text-slate-400 hover:text-red-500 transition-colors"
+                                                                title="Delete category"
+                                                            >
+                                                                <Trash2 className="w-3 h-3" />
+                                                            </button>
+                                                        </span>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     </div>
