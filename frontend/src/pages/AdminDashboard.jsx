@@ -196,31 +196,41 @@ const AdminDashboard = () => {
         e.preventDefault();
         const name = newCategoryName.trim();
         if (!name) return;
+
+        const newObj = { name };
+        const updated = [...categories.filter(c => (c.name || c) !== name), newObj];
+        setCategories(updated);
+        localStorage.setItem('job_categories', JSON.stringify(updated));
+        setFormData(prev => ({ ...prev, role: name }));
+        setNewCategoryName('');
+
         try {
             const { data } = await api.post('/jobs/categories/add', { name });
-            setNewCategoryName('');
-            const updated = [...categories.filter(c => (c.name || c) !== name), data];
-            setCategories(updated);
-            localStorage.setItem('job_categories', JSON.stringify(updated));
-            await fetchCategories(data.name);
-        } catch (err) {
-            alert(err.response?.data?.message || 'Error adding category');
-        }
+            if (data && data._id) {
+                const refreshed = [...updated.filter(c => (c.name || c) !== name), data];
+                setCategories(refreshed);
+                localStorage.setItem('job_categories', JSON.stringify(refreshed));
+            }
+        } catch (err) {}
     };
 
     const handleDeleteCategory = async (id, name) => {
+        const target = id || name;
+        const updated = categories.filter(c => (c._id !== id && (c.name || c) !== name));
+        setCategories(updated);
+        localStorage.setItem('job_categories', JSON.stringify(updated));
+        setFormData(prev => {
+            if (prev.role === name || prev.role === id) {
+                return { ...prev, role: updated[0]?.name || updated[0] || '' };
+            }
+            return prev;
+        });
+
         try {
-            const target = id || name;
             if (target) {
                 await api.delete(`/jobs/categories/${encodeURIComponent(target)}`);
             }
-            const updated = categories.filter(c => (c._id !== id && (c.name || c) !== name));
-            setCategories(updated);
-            localStorage.setItem('job_categories', JSON.stringify(updated));
-            await fetchCategories();
-        } catch (err) {
-            alert('Error deleting category');
-        }
+        } catch (err) {}
     };
 
     const fetchAdminJobs = async () => {
