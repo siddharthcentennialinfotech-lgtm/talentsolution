@@ -197,7 +197,8 @@ const AdminDashboard = () => {
         const name = newCategoryName.trim();
         if (!name) return;
 
-        const newObj = { name };
+        const tempId = `cat_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+        const newObj = { _id: tempId, name };
         const updated = [...categories.filter(c => (c.name || c) !== name), newObj];
         setCategories(updated);
         localStorage.setItem('job_categories', JSON.stringify(updated));
@@ -207,7 +208,7 @@ const AdminDashboard = () => {
         try {
             const { data } = await api.post('/jobs/categories/add', { name });
             if (data && data._id) {
-                const refreshed = [...updated.filter(c => (c.name || c) !== name), data];
+                const refreshed = updated.map(c => c._id === tempId ? data : c);
                 setCategories(refreshed);
                 localStorage.setItem('job_categories', JSON.stringify(refreshed));
             }
@@ -215,21 +216,28 @@ const AdminDashboard = () => {
     };
 
     const handleDeleteCategory = async (id, name) => {
-        const target = id || name;
-        const updated = categories.filter(c => (c._id !== id && (c.name || c) !== name));
+        const targetName = name || id;
+        const updated = categories.filter(c => {
+            const currentId = c._id || c.id;
+            const currentName = c.name || c;
+            if (id && currentId) {
+                return currentId !== id;
+            }
+            return currentName !== targetName;
+        });
+
         setCategories(updated);
         localStorage.setItem('job_categories', JSON.stringify(updated));
         setFormData(prev => {
-            if (prev.role === name || prev.role === id) {
-                return { ...prev, role: updated[0]?.name || updated[0] || '' };
+            if (prev.role === targetName) {
+                const nextRole = updated[0] ? (updated[0].name || updated[0]) : '';
+                return { ...prev, role: nextRole };
             }
             return prev;
         });
 
         try {
-            if (target) {
-                await api.delete(`/jobs/categories/${encodeURIComponent(target)}`);
-            }
+            await api.delete(`/jobs/categories/${encodeURIComponent(id || targetName)}`);
         } catch (err) {}
     };
 
