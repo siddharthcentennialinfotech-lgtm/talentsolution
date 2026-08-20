@@ -283,32 +283,32 @@ exports.verifyEmail = async (req, res) => {
 
         const name = user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user.name || 'User');
 
-        const transporter = nodemailer.createTransport({
-            host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-            port: Number(process.env.EMAIL_PORT) || 465,
-            secure: Number(process.env.EMAIL_PORT) !== 587,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: (process.env.EMAIL_PASS || '').replace(/\s+/g, '')
-            },
-            connectionTimeout: 5000,
-            greetingTimeout: 5000,
-            socketTimeout: 5000
-        });
-
-        const mailOptions = {
-            from: `"Centennial InfoTech Solutions" <${process.env.EMAIL_USER || 'no-reply@centennialinfotech.com'}>`,
-            to: cleanEmail,
-            subject: '🔐 Password Reset Verification Code - Centennial InfoTech Solutions',
-            text: `Your OTP for password reset is: ${otp}\n\nIt is valid for 10 minutes.\nIf you did not request this, please ignore this email.`,
-            html: generateOtpEmailHtml(otp, name)
-        };
-
         if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+            const transporter = nodemailer.createTransport({
+                host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+                port: Number(process.env.EMAIL_PORT) || 465,
+                secure: Number(process.env.EMAIL_PORT) !== 587,
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: (process.env.EMAIL_PASS || '').replace(/\s+/g, '')
+                },
+                connectionTimeout: 5000,
+                greetingTimeout: 5000,
+                socketTimeout: 5000
+            });
+
+            const mailOptions = {
+                from: `"Centennial InfoTech Solutions" <${process.env.EMAIL_USER || 'no-reply@centennialinfotech.com'}>`,
+                to: cleanEmail,
+                subject: '🔐 Password Reset Verification Code - Centennial InfoTech Solutions',
+                text: `Your OTP for password reset is: ${otp}\n\nIt is valid for 10 minutes.\nIf you did not request this, please ignore this email.`,
+                html: generateOtpEmailHtml(otp, name)
+            };
+
             transporter.sendMail(mailOptions).then(info => {
                 console.log(`Password reset OTP email successfully sent to ${cleanEmail} (MessageId: ${info.messageId})`);
             }).catch(mailError => {
-                console.error("Nodemailer send error:", mailError.message);
+                console.error("Nodemailer background send error:", mailError.message);
             });
         }
 
