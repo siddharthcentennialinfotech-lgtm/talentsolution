@@ -4,6 +4,7 @@ import api from '../api/axios';
 import { Plus, Briefcase, Users, Eye, Edit, Trash2, Loader2, X, MapPin, DollarSign, Clock, GraduationCap, Phone, Download, Mail, FileText, Building2, CheckCircle2, ArrowRight, Globe, Lock, LogOut, Bold, Italic, Underline, List, ListOrdered, RemoveFormatting } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import InrLogo from '../assets/inr-logo.jpg';
+import logo from '../logo-centennial.png';
 
 const RichTextEditor = ({ value, onChange }) => {
     const editorRef = React.useRef(null);
@@ -506,10 +507,13 @@ const AdminDashboard = () => {
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-10">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-start justify-between mb-8">
-                <div>
-                    <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Welcome Back, 👋</h1>
-                    <p className="text-[14px] text-slate-500 mt-1">Here is the summary of overall performance</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                    <img src={logo} alt="Centennial Infotech Logo" className="h-12 w-auto object-contain hidden sm:block" />
+                    <div>
+                        <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Welcome Back, 👋</h1>
+                        <p className="text-[14px] text-slate-500 mt-1">Here is the summary of overall performance</p>
+                    </div>
                 </div>
                 <div className="flex items-center gap-4 mt-4 md:mt-0">
                     <div className="relative">

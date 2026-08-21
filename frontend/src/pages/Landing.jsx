@@ -10,6 +10,7 @@ import engineeringServices from '../assets/engineering-services.png';
 import whatsappLogo from '../assets/contact/whatsapp.png';
 import mailLogo from '../assets/contact/mail.png';
 import callLogo from '../assets/contact/call.png';
+import logo from '../logo-centennial.png';
 
 const Landing = () => {
     const stats = [
@@ -254,7 +255,8 @@ const Landing = () => {
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left mb-16">
                         <div>
-                            <div className="flex items-center space-x-2 mb-6 justify-center md:justify-start">
+                            <div className="flex items-center space-x-3 mb-6 justify-center md:justify-start">
+                                <img src={logo} alt="Centennial Infotech Logo" className="h-12 w-auto object-contain" />
                                 <span className="text-2xl font-black tracking-tight text-brand-navy">Centennial <span className="text-brand-blue">Talent Solutions</span></span>
                             </div>
                             <p className="text-text-muted max-w-xs font-medium">Empowering the world's best tech teams with intelligent recruitment solutions.</p>

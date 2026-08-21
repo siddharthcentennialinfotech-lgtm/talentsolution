@@ -4,6 +4,7 @@ import api from '../api/axios';
 import { User, Mail, Phone, Lock, Sparkles, AlertCircle, Loader2, CheckCircle2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import logo from '../logo-centennial.png';
 
 const Auth = () => {
     const [searchParams] = useSearchParams();
@@ -258,8 +259,11 @@ const Auth = () => {
                             </div>
 
                             <div className="relative z-10 mt-12 pt-8 border-t border-white/10">
-                                <p className="text-white/60 text-sm font-bold uppercase tracking-widest leading-none">Powered by</p>
-                                <span className="text-xl font-black text-white mt-2 block">Centennial <span className="text-accent-cyan">Talent Solutions</span></span>
+                                <p className="text-white/60 text-xs font-bold uppercase tracking-widest leading-none mb-3">Powered by</p>
+                                <div className="flex items-center gap-3">
+                                    <img src={logo} alt="Centennial Infotech Logo" className="h-10 w-auto object-contain bg-white/10 p-1.5 rounded-lg" />
+                                    <span className="text-xl font-black text-white">Centennial <span className="text-accent-cyan">Talent Solutions</span></span>
+                                </div>
                             </div>
                         </div>
 
@@ -576,7 +580,8 @@ const Auth = () => {
                 ) : (
                     // Login Mode View
                     <>
-                        <div className="text-center mb-10">
+                        <div className="text-center mb-10 flex flex-col items-center">
+                            <img src={logo} alt="Centennial Infotech Logo" className="h-16 w-auto object-contain mb-4" />
                             <h2 className="text-4xl font-black text-slate-900 tracking-tight">Welcome Back</h2>
                             <p className="text-slate-500 mt-3 font-medium">Log in to your account with Centennial Talent Solutions</p>
                         </div>
