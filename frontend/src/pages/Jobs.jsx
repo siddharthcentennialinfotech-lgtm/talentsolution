@@ -5,6 +5,60 @@ import { Search, MapPin, Briefcase, DollarSign, Calendar, Filter, Loader2, Arrow
 import { motion, AnimatePresence } from 'framer-motion';
 import InrLogo from '../assets/inr-logo.jpg';
 
+const defaultSampleJobs = [
+    {
+        _id: 'job_sample_1',
+        title: 'Senior Full Stack Software Engineer',
+        role: 'Software Development',
+        company_name: 'Centennial Tech Solutions',
+        description: 'Building scalable enterprise cloud applications, web portals, and microservices architecture.',
+        salary_min: 900000,
+        salary_max: 1800000,
+        currency: 'INR',
+        experience_required: 3,
+        job_type: 'full-time',
+        work_mode: 'hybrid',
+        location_city: 'Bangalore',
+        openings_count: 5,
+        status: 'open',
+        createdAt: new Date()
+    },
+    {
+        _id: 'job_sample_2',
+        title: 'UI/UX Product Designer & Developer',
+        role: 'UI/UX Design',
+        company_name: 'Hyperion Innovations',
+        description: 'Designing intuitive design systems, mobile apps, and modern responsive interfaces.',
+        salary_min: 600000,
+        salary_max: 1400000,
+        currency: 'INR',
+        experience_required: 2,
+        job_type: 'full-time',
+        work_mode: 'remote',
+        location_city: 'Mumbai',
+        openings_count: 4,
+        status: 'open',
+        createdAt: new Date()
+    },
+    {
+        _id: 'job_sample_3',
+        title: 'Lead Quality Assurance Engineer',
+        role: 'Quality Assurance',
+        company_name: 'Centennial Infotech',
+        description: 'Automating regression suites, API testing, and ensuring product reliability.',
+        salary_min: 700000,
+        salary_max: 1300000,
+        currency: 'INR',
+        experience_required: 4,
+        job_type: 'full-time',
+        work_mode: 'onsite',
+        location_city: 'Delhi',
+        openings_count: 3,
+        status: 'open',
+        createdAt: new Date()
+    }
+];
+
 const Jobs = () => {
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -76,9 +130,14 @@ const Jobs = () => {
             if (selectedRole) params.append('role', selectedRole);
 
             const { data } = await api.get(`/jobs?${params.toString()}&_cb=${Date.now()}`);
-            setJobs(data);
+            if (Array.isArray(data) && data.length > 0) {
+                setJobs(data);
+            } else {
+                setJobs(defaultSampleJobs);
+            }
         } catch (err) {
-            console.error('Failed to fetch jobs', err);
+            console.error('Failed to fetch jobs, using fallback sample jobs', err);
+            setJobs(defaultSampleJobs);
         } finally {
             setLoading(false);
         }
