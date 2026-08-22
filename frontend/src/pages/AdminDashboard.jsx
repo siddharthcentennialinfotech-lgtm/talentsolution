@@ -159,6 +159,7 @@ const AdminDashboard = () => {
         role: 'Software Development'
     });
     const [editingJob, setEditingJob] = useState(null);
+    const [errors, setErrors] = useState({});
     const [categories, setCategories] = useState(() => {
         try {
             const saved = localStorage.getItem('job_categories');
@@ -394,16 +395,34 @@ const AdminDashboard = () => {
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        if (errors[e.target.name]) setErrors(prev => ({ ...prev, [e.target.name]: '' }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Submitting Job Form Data:', formData);
+        const errs = {};
+        const check = (v) => !String(v ?? '').replace(/<[^>]*>/g, '').trim();
+
+        if (check(formData.title)) errs.title = 'Please fill out Job Title';
+        if (check(formData.company_name)) errs.company_name = 'Please fill out Company Name';
+        if (check(formData.role)) errs.role = 'Please select Job Role / Category';
+        if (check(formData.location_city)) errs.location_city = 'Please fill out Primary Location';
+        if (check(formData.experience_required)) errs.experience_required = 'Please fill out Experience Required';
+        if (check(formData.openings_count)) errs.openings_count = 'Please fill out Openings';
+        if (check(formData.salary_min)) errs.salary_min = 'Please fill out Minimum Salary';
+        if (check(formData.salary_max)) errs.salary_max = 'Please fill out Maximum Salary';
+        if (check(formData.description)) errs.description = 'Please fill out Full Job Description';
+        if (check(formData.requirements)) errs.requirements = 'Please fill out Required Qualifications';
+        if (check(formData.responsibilities)) errs.responsibilities = 'Please fill out Key Responsibilities';
+
+        if (Object.keys(errs).length > 0) {
+            setErrors(errs);
+            return;
+        }
+        setErrors({});
         setFormLoading(true);
         try {
-            console.log('Final Form Data to Send:', formData);
             if (editingJob) {
-                console.log('UPDATING JOB:', editingJob._id, formData);
                 await api.put(`/jobs/${editingJob._id}`, formData);
                 alert('Job updated successfully!');
             } else {
@@ -440,6 +459,7 @@ const AdminDashboard = () => {
 
     const handleEdit = (job) => {
         setEditingJob(job);
+        setErrors({});
         setFormData({
             job_id: job.job_id,
             title: job.title,
@@ -605,6 +625,7 @@ const AdminDashboard = () => {
                         disabled={jobs.length >= adminStats.maxJobsAllowed}
                         onClick={() => {
                             setEditingJob(null);
+                            setErrors({});
                             setFormData({
                                 job_id: `JOB${Math.floor(1000 + Math.random() * 9000)}`,
                                 title: '',
@@ -739,7 +760,7 @@ const AdminDashboard = () => {
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="p-8 overflow-y-auto space-y-10 custom-scrollbar bg-slate-50/50">
+                            <form onSubmit={handleSubmit} noValidate className="p-8 overflow-y-auto space-y-10 custom-scrollbar bg-slate-50/50">
                                 {/* Section 1: Basic Information */}
                                 <section>
                                     <div className="flex items-center space-x-3 mb-6">
@@ -750,7 +771,7 @@ const AdminDashboard = () => {
                                     </div>
                                     <div className="grid md:grid-cols-2 gap-6 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                                         <div className="space-y-2">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Job Title</label>
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Job Title <span className="text-red-500">*</span></label>
                                             <div className="relative group">
                                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary-500 transition-colors">
                                                     <FileText className="w-5 h-5" />
@@ -758,15 +779,15 @@ const AdminDashboard = () => {
                                                 <input
                                                     name="title"
                                                     value={formData.title}
-                                                    required
-                                                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-900"
+                                                    className={`w-full bg-slate-50 border-2 ${errors.title ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900`}
                                                     placeholder="e.g. Senior Frontend Engineer"
                                                     onChange={handleChange}
                                                 />
                                             </div>
+                                            {errors.title && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.title}</p>}
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company Name</label>
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company Name <span className="text-red-500">*</span></label>
                                             <div className="relative group">
                                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary-500 transition-colors">
                                                     <Building2 className="w-5 h-5" />
@@ -774,16 +795,16 @@ const AdminDashboard = () => {
                                                 <input
                                                     name="company_name"
                                                     value={formData.company_name}
-                                                    required
-                                                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-900"
+                                                    className={`w-full bg-slate-50 border-2 ${errors.company_name ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900`}
                                                     placeholder="Centennial Partner Name"
                                                     onChange={handleChange}
                                                 />
                                             </div>
+                                            {errors.company_name && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.company_name}</p>}
                                         </div>
                                     </div>
                                     <div className="space-y-3 mt-6">
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Job Role / Category</label>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Job Role / Category <span className="text-red-500">*</span></label>
                                         <div className="relative group">
                                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary-500 transition-colors">
                                                 <Briefcase className="w-5 h-5" />
@@ -791,8 +812,7 @@ const AdminDashboard = () => {
                                             <select
                                                 name="role"
                                                 value={formData.role}
-                                                required
-                                                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none"
+                                                className={`w-full bg-slate-50 border-2 ${errors.role ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none`}
                                                 onChange={handleChange}
                                             >
                                                 {categories.map(cat => {
@@ -802,6 +822,7 @@ const AdminDashboard = () => {
                                                 })}
                                             </select>
                                         </div>
+                                        {errors.role && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.role}</p>}
                                         <div className="pt-2 space-y-3">
                                             <div className="flex gap-2">
                                                 <input
@@ -853,26 +874,26 @@ const AdminDashboard = () => {
                                     <div className="grid md:grid-cols-2 gap-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
                                         <div className="space-y-6">
                                             <div className="space-y-2">
-                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Primary Location</label>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Primary Location <span className="text-red-500">*</span></label>
                                                 <div className="relative group">
                                                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary-500 transition-colors w-5 h-5" />
                                                     <input
                                                         name="location_city"
                                                         value={formData.location_city}
-                                                        required
-                                                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-900"
+                                                        className={`w-full bg-slate-50 border-2 ${errors.location_city ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900`}
                                                         placeholder="City, State"
                                                         onChange={handleChange}
                                                     />
                                                 </div>
+                                                {errors.location_city && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.location_city}</p>}
                                             </div>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Job Type</label>
+                                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Job Type <span className="text-red-500">*</span></label>
                                                     <select
                                                         name="job_type"
                                                         value={formData.job_type}
-                                                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 px-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none"
+                                                        className={`w-full bg-slate-50 border-2 ${errors.job_type ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 px-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none`}
                                                         onChange={handleChange}
                                                     >
                                                         <option value="full-time">Full-time</option>
@@ -880,45 +901,49 @@ const AdminDashboard = () => {
                                                         <option value="contract">Contract</option>
                                                         <option value="internship">Internship</option>
                                                     </select>
+                                                    {errors.job_type && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.job_type}</p>}
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Work Mode</label>
+                                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Work Mode <span className="text-red-500">*</span></label>
                                                     <select
                                                         name="work_mode"
                                                         value={formData.work_mode}
-                                                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 px-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none"
+                                                        className={`w-full bg-slate-50 border-2 ${errors.work_mode ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 px-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none`}
                                                         onChange={handleChange}
                                                     >
                                                         <option value="onsite">On-site</option>
                                                         <option value="remote">Remote</option>
                                                         <option value="hybrid">Hybrid</option>
                                                     </select>
+                                                    {errors.work_mode && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.work_mode}</p>}
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Exp. Required (Yrs)</label>
+                                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Exp. Required (Yrs) <span className="text-red-500">*</span></label>
                                                     <input
                                                         name="experience_required"
                                                         value={formData.experience_required}
                                                         type="number"
-                                                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 px-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-900"
+                                                        className={`w-full bg-slate-50 border-2 ${errors.experience_required ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 px-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900`}
                                                         placeholder="Years"
                                                         onChange={handleChange}
                                                     />
+                                                    {errors.experience_required && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.experience_required}</p>}
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Openings</label>
+                                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Openings <span className="text-red-500">*</span></label>
                                                     <input
                                                         name="openings_count"
                                                         value={formData.openings_count}
                                                         type="number"
-                                                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 px-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-900"
+                                                        className={`w-full bg-slate-50 border-2 ${errors.openings_count ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 px-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900`}
                                                         onChange={handleChange}
                                                     />
+                                                    {errors.openings_count && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.openings_count}</p>}
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="space-y-4 pt-6 border-t border-slate-50">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left">Annual Compensation Range</label>
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left">Annual Compensation Range <span className="text-red-500">*</span></label>
                                             <div className="flex gap-4">
                                                 <div className="w-24">
                                                     <select
@@ -932,39 +957,43 @@ const AdminDashboard = () => {
                                                     </select>
                                                 </div>
                                                 <div className="flex-1 grid grid-cols-2 gap-4">
-                                                    <div className="relative group">
-                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center">
-                                                            {renderCurrencySymbol(formData.currency, 'w-4 h-4')}
-                                                        </span>
-                                                        <input
-                                                            name="salary_min"
-                                                            value={formData.salary_min}
-                                                            type="number"
-                                                            required
-                                                            className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 pl-10 pr-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-900"
-                                                            placeholder="Min (e.g. 50000)"
-                                                            onChange={handleChange}
-                                                        />
+                                                    <div>
+                                                        <div className="relative group">
+                                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center">
+                                                                {renderCurrencySymbol(formData.currency, 'w-4 h-4')}
+                                                            </span>
+                                                            <input
+                                                                name="salary_min"
+                                                                value={formData.salary_min}
+                                                                type="number"
+                                                                className={`w-full bg-slate-50 border-2 ${errors.salary_min ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-10 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900`}
+                                                                placeholder="Min (e.g. 50000)"
+                                                                onChange={handleChange}
+                                                            />
+                                                        </div>
+                                                        {errors.salary_min && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.salary_min}</p>}
                                                     </div>
-                                                    <div className="relative group">
-                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center">
-                                                            {renderCurrencySymbol(formData.currency, 'w-4 h-4')}
-                                                        </span>
-                                                        <input
-                                                            name="salary_max"
-                                                            value={formData.salary_max}
-                                                            type="number"
-                                                            required
-                                                            className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 pl-10 pr-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-900"
-                                                            placeholder="Max (e.g. 100000)"
-                                                            onChange={handleChange}
-                                                        />
+                                                    <div>
+                                                        <div className="relative group">
+                                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center">
+                                                                {renderCurrencySymbol(formData.currency, 'w-4 h-4')}
+                                                            </span>
+                                                            <input
+                                                                name="salary_max"
+                                                                value={formData.salary_max}
+                                                                type="number"
+                                                                className={`w-full bg-slate-50 border-2 ${errors.salary_max ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-10 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900`}
+                                                                placeholder="Max (e.g. 100000)"
+                                                                onChange={handleChange}
+                                                            />
+                                                        </div>
+                                                        {errors.salary_max && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.salary_max}</p>}
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="space-y-2 pt-6 border-t border-slate-50">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left">Listing Status</label>
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left">Listing Status <span className="text-red-500">*</span></label>
                                             <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
                                                 {['open', 'closed', 'draft'].map((s) => (
                                                     <button
@@ -991,36 +1020,40 @@ const AdminDashboard = () => {
                                     </div>
                                     <div className="space-y-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
                                         <div className="space-y-2">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left">Full Job Description</label>
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left">Full Job Description <span className="text-red-500">*</span></label>
                                             <RichTextEditor
                                                 value={formData.description}
-                                                onChange={(val) => setFormData(prev => ({ ...prev, description: val }))}
+                                                onChange={(val) => {
+                                                    setFormData(prev => ({ ...prev, description: val }));
+                                                    if (errors.description) setErrors(prev => ({ ...prev, description: '' }));
+                                                }}
                                             />
+                                            {errors.description && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.description}</p>}
                                         </div>
                                         <div className="grid md:grid-cols-2 gap-8">
                                             <div className="space-y-2">
-                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left">Required Qualifications</label>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left">Required Qualifications <span className="text-red-500">*</span></label>
                                                 <textarea
                                                     name="requirements"
                                                     value={formData.requirements}
-                                                    required
                                                     rows="4"
-                                                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 px-6 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-medium text-slate-600 resize-none leading-relaxed"
+                                                    className={`w-full bg-slate-50 border-2 ${errors.requirements ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-4 px-6 outline-none focus:bg-white transition-all duration-300 font-medium text-slate-600 resize-none leading-relaxed`}
                                                     placeholder="Skills, experience, and certifications..."
                                                     onChange={handleChange}
                                                 />
+                                                {errors.requirements && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.requirements}</p>}
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left">Key Responsibilities</label>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left">Key Responsibilities <span className="text-red-500">*</span></label>
                                                 <textarea
                                                     name="responsibilities"
                                                     value={formData.responsibilities}
-                                                    required
                                                     rows="4"
-                                                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 px-6 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-medium text-slate-600 resize-none leading-relaxed"
+                                                    className={`w-full bg-slate-50 border-2 ${errors.responsibilities ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-4 px-6 outline-none focus:bg-white transition-all duration-300 font-medium text-slate-600 resize-none leading-relaxed`}
                                                     placeholder="Day-to-day tasks and expectations..."
                                                     onChange={handleChange}
                                                 />
+                                                {errors.responsibilities && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.responsibilities}</p>}
                                             </div>
                                         </div>
                                     </div>
