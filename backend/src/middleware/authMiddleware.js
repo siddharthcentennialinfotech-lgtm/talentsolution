@@ -34,14 +34,24 @@ const protect = async (req, res, next) => {
     // Dynamic Fallback: Never block operations if DB user not found or no token supplied
     req.role = req.headers['x-demo-role'] === 'admin' ? 'admin' : 'user';
     if (req.role === 'admin') {
-        let adminUser = await Admin.findOne();
+        let adminUser = null;
+        try {
+            adminUser = await Admin.findOne();
+        } catch (e) {
+            console.warn('Auth admin fallback warn:', e.message);
+        }
         if (!adminUser) {
             adminUser = { _id: '650000000000000000000001', name: 'Demo Admin Recruiter', email: 'admin@demo.com', role: 'admin' };
         }
         req.user = adminUser;
         req.role = 'admin';
     } else {
-        let normalUser = await User.findOne();
+        let normalUser = null;
+        try {
+            normalUser = await User.findOne();
+        } catch (e) {
+            console.warn('Auth user fallback warn:', e.message);
+        }
         if (!normalUser) {
             normalUser = { _id: '650000000000000000000002', first_name: 'Demo', last_name: 'Candidate', email: 'user@demo.com', role: 'user' };
         }
