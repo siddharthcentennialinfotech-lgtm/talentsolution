@@ -155,7 +155,8 @@ exports.updateProfile = async (req, res) => {
                 'first_name', 'last_name', 'phone', 'location_city', 'location_state',
                 'country', 'degree', 'branch', 'specialization', 'university',
                 'graduation_year', 'experience_years', 'current_company',
-                'current_salary', 'expected_salary', 'resume_url', 'linkedin_url', 'skills'
+                'current_salary', 'expected_salary', 'resume_url', 'linkedin_url', 'skills',
+                'work_experiences'
             ];
 
             fieldsToUpdate.forEach(field => {
@@ -186,6 +187,7 @@ exports.updateProfile = async (req, res) => {
                 experience_years: updatedUser.experience_years,
                 current_company: updatedUser.current_company,
                 skills: updatedUser.skills,
+                work_experiences: updatedUser.work_experiences,
                 token: generateToken(updatedUser._id, 'user'),
             });
         } else {

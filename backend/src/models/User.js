@@ -21,7 +21,14 @@ const userSchema = new mongoose.Schema({
     expected_salary: Number,
     resume_url: String,
     linkedin_url: String,
-    skills: [String]
+    skills: [String],
+    work_experiences: [{
+        company_name: String,
+        role: String,
+        start_year: Number,
+        end_year: String,
+        description: String
+    }]
 }, { timestamps: true });
 
 // Hash password before saving

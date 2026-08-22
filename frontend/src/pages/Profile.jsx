@@ -7,29 +7,36 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ProfileField = ({ label, icon: Icon, name, value, onChange, placeholder, type = "text", disabled = false }) => (
+const ProfileField = ({ label, icon: Icon, name, value, onChange, placeholder, type = "text", disabled = false, error = "", required = false, min, max }) => (
     <div className="space-y-2">
-        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{label}</label>
+        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+            {label} {required && <span className="text-red-500">*</span>}
+        </label>
         <div className="relative group">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 group-focus-within:text-primary-600 text-slate-300">
-                {Icon && <Icon className="w-4 h-4" />}
-            </div>
+            {Icon && (
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 group-focus-within:text-primary-600 text-slate-300">
+                    <Icon className="w-4 h-4" />
+                </div>
+            )}
             <input
                 name={name}
                 type={type}
-                value={value || ''}
+                value={value ?? ''}
                 onChange={onChange}
                 disabled={disabled}
                 placeholder={placeholder}
-                className={`w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 ${Icon ? 'pl-11' : 'px-6'} pr-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-700 disabled:opacity-50`}
+                min={min}
+                max={max}
+                className={`w-full bg-slate-50 border-2 ${error ? 'border-red-500 bg-red-50/20' : 'border-slate-100'} rounded-2xl py-3.5 ${Icon ? 'pl-11' : 'px-6'} pr-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-700 disabled:opacity-50`}
             />
         </div>
+        {error && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{error}</p>}
     </div>
 );
 
 const SectionHeader = ({ icon: Icon, title, subtitle }) => (
-    <div className="flex items-center space-x-4 mb-8">
-        <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-600 shadow-sm">
+    <div className="flex items-center space-x-4 mb-4 sm:mb-8">
+        <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-600 shadow-sm shrink-0">
             <Icon className="w-6 h-6" />
         </div>
         <div>
@@ -54,18 +61,23 @@ const Profile = () => {
         experience_years: 0,
         current_company: '',
         linkedin_url: '',
-        skills: []
+        skills: [],
+        work_experiences: []
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [notification, setNotification] = useState(null);
+    const [errors, setErrors] = useState({});
     const [newSkill, setNewSkill] = useState('');
 
     useEffect(() => {
         const fetchProfile = async () => {
             try {
                 const { data } = await api.get('/auth/user/profile');
-                setProfile(data);
+                setProfile({
+                    ...data,
+                    work_experiences: data.work_experiences || []
+                });
             } catch (err) {
                 console.error('Failed to fetch profile', err);
             } finally {
@@ -78,23 +90,115 @@ const Profile = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setProfile(prev => ({ ...prev, [name]: value }));
+        if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+    };
+
+    const addExperienceItem = () => {
+        const newExp = {
+            company_name: '',
+            role: '',
+            start_year: new Date().getFullYear(),
+            end_year: 'Present',
+            description: ''
+        };
+        setProfile(prev => ({
+            ...prev,
+            work_experiences: [newExp, ...(prev.work_experiences || [])]
+        }));
+    };
+
+    const removeExperienceItem = (index) => {
+        setProfile(prev => ({
+            ...prev,
+            work_experiences: (prev.work_experiences || []).filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleExperienceChange = (index, field, value) => {
+        setProfile(prev => {
+            const updated = [...(prev.work_experiences || [])];
+            updated[index] = { ...updated[index], [field]: value };
+            return { ...prev, work_experiences: updated };
+        });
+        if (errors[`exp_${index}_${field}`]) {
+            setErrors(prev => ({ ...prev, [`exp_${index}_${field}`]: '' }));
+        }
     };
 
     const handleSave = async (e) => {
         e.preventDefault();
-        if (Number(profile.experience_years) > 50) {
-            setNotification({ type: 'error', text: 'Experience cannot exceed 50 years' });
+        const errs = {};
+
+        if (!String(profile.first_name || '').trim()) errs.first_name = 'Please fill out First Name';
+        if (!String(profile.last_name || '').trim()) errs.last_name = 'Please fill out Last Name';
+        if (!String(profile.phone || '').trim()) errs.phone = 'Please fill out Direct Phone';
+        if (!String(profile.location_city || '').trim()) errs.location_city = 'Please fill out Current Headquarters';
+        if (!String(profile.university || '').trim()) errs.university = 'Please fill out Primary Institution';
+        if (!String(profile.degree || '').trim()) errs.degree = 'Please fill out Degree Earned';
+        if (!String(profile.branch || '').trim()) errs.branch = 'Please fill out Branch / Department';
+
+        // Passing Cycle validation
+        if (!profile.graduation_year) {
+            errs.graduation_year = 'Please fill out Passing Cycle';
+        } else if (Number(profile.graduation_year) < 1970 || Number(profile.graduation_year) > 2036) {
+            errs.graduation_year = 'Passing Cycle must be between 1970 and 2036';
+        }
+
+        // Industry Tenure validation
+        if (profile.experience_years === '' || profile.experience_years === null || profile.experience_years === undefined) {
+            errs.experience_years = 'Please fill out Industry Tenure';
+        } else if (Number(profile.experience_years) > 50) {
+            errs.experience_years = 'Experience cannot exceed 50 years';
+        } else if (Number(profile.experience_years) < 0) {
+            errs.experience_years = 'Experience cannot be negative';
+        }
+
+        if (Number(profile.experience_years) > 0 && !String(profile.current_company || '').trim()) {
+            errs.current_company = 'Please fill out Current Organization';
+        }
+
+        // Work Experiences High to Low Validation
+        const exps = profile.work_experiences || [];
+        exps.forEach((exp, idx) => {
+            if (!String(exp.company_name || '').trim()) {
+                errs[`exp_${idx}_company_name`] = 'Please fill out Company Name';
+            }
+            if (!String(exp.role || '').trim()) {
+                errs[`exp_${idx}_role`] = 'Please fill out Role / Designation';
+            }
+            if (!exp.start_year) {
+                errs[`exp_${idx}_start_year`] = 'Please fill out Start Year';
+            }
+            if (exp.end_year && exp.end_year !== 'Present') {
+                if (Number(exp.start_year) > Number(exp.end_year)) {
+                    errs[`exp_${idx}_start_year`] = 'Start Year cannot be greater than End Year';
+                }
+            }
+        });
+
+        if (Object.keys(errs).length > 0) {
+            setErrors(errs);
+            setNotification({ type: 'error', text: 'Please fill out all required fields properly' });
             return;
         }
-        if (Number(profile.experience_years) < 0) {
-            setNotification({ type: 'error', text: 'Experience cannot be negative' });
-            return;
-        }
+
+        setErrors({});
         setSaving(true);
         setNotification(null);
+
+        // Sort work experiences High to Low (most recent start_year first)
+        const sortedExps = [...exps].sort((a, b) => {
+            const yearA = a.end_year === 'Present' ? 9999 : Number(a.start_year || 0);
+            const yearB = b.end_year === 'Present' ? 9999 : Number(b.start_year || 0);
+            return yearB - yearA;
+        });
+
+        const updatedProfile = { ...profile, work_experiences: sortedExps };
+
         try {
-            await api.put('/auth/user/profile', profile);
-            setNotification({ type: 'success', text: 'Profile intelligence updated!' });
+            await api.put('/auth/user/profile', updatedProfile);
+            setProfile(updatedProfile);
+            setNotification({ type: 'success', text: 'Profile intelligence updated successfully!' });
             setTimeout(() => setNotification(null), 4000);
         } catch (err) {
             setNotification({ type: 'error', text: err.response?.data?.message || 'Synchronization failed' });
@@ -127,7 +231,7 @@ const Profile = () => {
     }
 
     return (
-        <div className="min-h-screen pt-32 pb-24 px-4 bg-slate-50 relative overflow-hidden">
+        <div className="min-h-screen pt-28 sm:pt-32 pb-24 px-4 bg-slate-50 relative overflow-hidden">
             {/* Background Decor */}
             <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0">
                 <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-primary-200/20 rounded-full blur-[120px]"></div>
@@ -292,15 +396,47 @@ const Profile = () => {
                             )}
                         </AnimatePresence>
 
-                        <div className="glass rounded-[3rem] p-10 md:p-14 shadow-premium border border-white/50 space-y-16">
+                        <div className="glass rounded-[3rem] p-6 sm:p-10 md:p-14 shadow-premium border border-white/50 space-y-16">
                             {/* Identity Section */}
                             <section>
                                 <SectionHeader icon={User} title="Personnel File" subtitle="Legal & Contact Identification" />
                                 <div className="grid md:grid-cols-2 gap-8">
-                                    <ProfileField label="First Name" name="first_name" value={profile.first_name} onChange={handleChange} />
-                                    <ProfileField label="Last Name" name="last_name" value={profile.last_name} onChange={handleChange} />
-                                    <ProfileField label="Direct Phone" icon={Phone} name="phone" value={profile.phone} onChange={handleChange} placeholder="+91..." />
-                                    <ProfileField label="Current Headquarters" icon={MapPin} name="location_city" value={profile.location_city} onChange={handleChange} placeholder="City, Country" />
+                                    <ProfileField
+                                        label="First Name"
+                                        name="first_name"
+                                        value={profile.first_name}
+                                        onChange={handleChange}
+                                        error={errors.first_name}
+                                        required
+                                    />
+                                    <ProfileField
+                                        label="Last Name"
+                                        name="last_name"
+                                        value={profile.last_name}
+                                        onChange={handleChange}
+                                        error={errors.last_name}
+                                        required
+                                    />
+                                    <ProfileField
+                                        label="Direct Phone"
+                                        icon={Phone}
+                                        name="phone"
+                                        value={profile.phone}
+                                        onChange={handleChange}
+                                        placeholder="+91..."
+                                        error={errors.phone}
+                                        required
+                                    />
+                                    <ProfileField
+                                        label="Current Headquarters"
+                                        icon={MapPin}
+                                        name="location_city"
+                                        value={profile.location_city}
+                                        onChange={handleChange}
+                                        placeholder="City, Country"
+                                        error={errors.location_city}
+                                        required
+                                    />
                                 </div>
                             </section>
 
@@ -309,21 +445,178 @@ const Profile = () => {
                                 <SectionHeader icon={GraduationCap} title="Academic Foundation" subtitle="Educational Background & Branch" />
                                 <div className="grid md:grid-cols-2 gap-8">
                                     <div className="md:col-span-2">
-                                        <ProfileField label="Primary Institution" icon={Building} name="university" value={profile.university} onChange={handleChange} placeholder="Massachusetts Institute of Technology" />
+                                        <ProfileField
+                                            label="Primary Institution"
+                                            icon={Building}
+                                            name="university"
+                                            value={profile.university}
+                                            onChange={handleChange}
+                                            placeholder="Massachusetts Institute of Technology"
+                                            error={errors.university}
+                                            required
+                                        />
                                     </div>
-                                    <ProfileField label="Degree Earned" name="degree" value={profile.degree} onChange={handleChange} placeholder="e.g. Bachelor of Engineering" />
-                                    <ProfileField label="Branch / Department" name="branch" value={profile.branch} onChange={handleChange} placeholder="e.g. Computer Science & Engineering" />
-                                    <ProfileField label="Specialization" name="specialization" value={profile.specialization} onChange={handleChange} placeholder="e.g. Software Systems" />
-                                    <ProfileField label="Passing Cycle" icon={Calendar} name="graduation_year" type="number" value={profile.graduation_year} onChange={handleChange} placeholder="2024" />
+                                    <ProfileField
+                                        label="Degree Earned"
+                                        name="degree"
+                                        value={profile.degree}
+                                        onChange={handleChange}
+                                        placeholder="e.g. Bachelor of Engineering"
+                                        error={errors.degree}
+                                        required
+                                    />
+                                    <ProfileField
+                                        label="Branch / Department"
+                                        name="branch"
+                                        value={profile.branch}
+                                        onChange={handleChange}
+                                        placeholder="e.g. Computer Science & Engineering"
+                                        error={errors.branch}
+                                        required
+                                    />
+                                    <ProfileField
+                                        label="Specialization"
+                                        name="specialization"
+                                        value={profile.specialization}
+                                        onChange={handleChange}
+                                        placeholder="e.g. Software Systems"
+                                    />
+                                    <ProfileField
+                                        label="Passing Cycle"
+                                        icon={Calendar}
+                                        name="graduation_year"
+                                        type="number"
+                                        min="1970"
+                                        max="2036"
+                                        value={profile.graduation_year}
+                                        onChange={handleChange}
+                                        placeholder="e.g. 2024"
+                                        error={errors.graduation_year}
+                                        required
+                                    />
                                 </div>
                             </section>
 
                             {/* Career Section */}
                             <section>
-                                <SectionHeader icon={Briefcase} title="Professional Trajectory" subtitle="Work Experience & Impact" />
-                                <div className="grid md:grid-cols-2 gap-8">
-                                    <ProfileField label="Industry Tenure (Years)" name="experience_years" type="number" value={profile.experience_years} onChange={handleChange} />
-                                    <ProfileField label="Current Organization" icon={Building} name="current_company" value={profile.current_company} onChange={handleChange} placeholder="Hyperion Tech Inc." />
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                                    <SectionHeader icon={Briefcase} title="Professional Trajectory" subtitle="Work Experience & Impact" />
+                                    <button
+                                        type="button"
+                                        onClick={addExperienceItem}
+                                        className="flex items-center justify-center gap-2 bg-primary-50 text-primary-600 hover:bg-primary-100 px-5 py-2.5 rounded-2xl font-bold text-xs transition-all border border-primary-100 shadow-sm self-start sm:self-auto"
+                                    >
+                                        <Plus className="w-4 h-4" /> <span>Add Experience</span>
+                                    </button>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-8 mb-8">
+                                    <ProfileField
+                                        label="Industry Tenure (Years)"
+                                        name="experience_years"
+                                        type="number"
+                                        value={profile.experience_years}
+                                        onChange={handleChange}
+                                        error={errors.experience_years}
+                                        required
+                                        max="50"
+                                        min="0"
+                                    />
+                                    <ProfileField
+                                        label="Current Organization"
+                                        icon={Building}
+                                        name="current_company"
+                                        value={profile.current_company}
+                                        onChange={handleChange}
+                                        error={errors.current_company}
+                                        placeholder="Hyperion Tech Inc."
+                                        required={Number(profile.experience_years) > 0}
+                                    />
+                                </div>
+
+                                {/* Dynamic Work Experience Cards */}
+                                <div className="space-y-6">
+                                    {(profile.work_experiences || []).map((exp, idx) => (
+                                        <motion.div
+                                            key={idx}
+                                            initial={{ opacity: 0, y: 15 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="bg-slate-50/80 p-6 sm:p-8 rounded-3xl border border-slate-200/80 relative space-y-6 group hover:bg-white hover:shadow-md transition-all text-left"
+                                        >
+                                            <div className="flex justify-between items-center pb-4 border-b border-slate-200/60">
+                                                <span className="text-xs font-black uppercase tracking-widest text-primary-600">
+                                                    Experience #{idx + 1} {exp.end_year === 'Present' ? '(Current)' : ''}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeExperienceItem(idx)}
+                                                    className="text-slate-400 hover:text-red-500 p-2 rounded-xl hover:bg-red-50 transition-colors flex items-center gap-1 text-xs font-bold"
+                                                >
+                                                    <X className="w-4 h-4" /> Remove
+                                                </button>
+                                            </div>
+
+                                            <div className="grid md:grid-cols-2 gap-6">
+                                                <ProfileField
+                                                    label="Company Name"
+                                                    icon={Building}
+                                                    name={`company_${idx}`}
+                                                    value={exp.company_name}
+                                                    onChange={(e) => handleExperienceChange(idx, 'company_name', e.target.value)}
+                                                    placeholder="Google / Centennial Inc."
+                                                    error={errors[`exp_${idx}_company_name`]}
+                                                    required
+                                                />
+                                                <ProfileField
+                                                    label="Role / Designation"
+                                                    icon={Briefcase}
+                                                    name={`role_${idx}`}
+                                                    value={exp.role}
+                                                    onChange={(e) => handleExperienceChange(idx, 'role', e.target.value)}
+                                                    placeholder="Senior Software Engineer"
+                                                    error={errors[`exp_${idx}_role`]}
+                                                    required
+                                                />
+                                                <ProfileField
+                                                    label="Start Year"
+                                                    icon={Calendar}
+                                                    type="number"
+                                                    name={`start_year_${idx}`}
+                                                    value={exp.start_year}
+                                                    onChange={(e) => handleExperienceChange(idx, 'start_year', e.target.value)}
+                                                    placeholder="2022"
+                                                    error={errors[`exp_${idx}_start_year`]}
+                                                    required
+                                                />
+                                                <ProfileField
+                                                    label="End Year (or Present)"
+                                                    icon={Calendar}
+                                                    name={`end_year_${idx}`}
+                                                    value={exp.end_year}
+                                                    onChange={(e) => handleExperienceChange(idx, 'end_year', e.target.value)}
+                                                    placeholder="Present or 2024"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Key Responsibilities / Impact</label>
+                                                <textarea
+                                                    rows={3}
+                                                    value={exp.description || ''}
+                                                    onChange={(e) => handleExperienceChange(idx, 'description', e.target.value)}
+                                                    placeholder="Describe key achievements, technologies used, and leadership impact..."
+                                                    className="w-full bg-white border-2 border-slate-100 rounded-2xl p-4 outline-none focus:border-primary-500 font-bold text-sm text-slate-700"
+                                                />
+                                            </div>
+                                        </motion.div>
+                                    ))}
+
+                                    {(profile.work_experiences || []).length === 0 && (
+                                        <div className="text-center py-8 px-4 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl">
+                                            <p className="text-slate-400 text-sm font-bold">No additional work experiences added yet.</p>
+                                            <p className="text-xs text-slate-400 mt-1">Click "+ Add Experience" above to list your past companies & roles.</p>
+                                        </div>
+                                    )}
                                 </div>
                             </section>
 
