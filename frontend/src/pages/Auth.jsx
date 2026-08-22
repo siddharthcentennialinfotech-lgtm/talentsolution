@@ -31,7 +31,11 @@ const Auth = () => {
     const navigate = useNavigate();
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        let { name, value } = e.target;
+        if (name === 'phone') {
+            value = value.replace(/[^0-9]/g, '').slice(0, 10);
+        }
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     React.useEffect(() => {
@@ -168,6 +172,14 @@ const Auth = () => {
                         setFpStep(1);
                         setFormData({ ...formData, password: '', confirm_password: '', otp: '' });
                     }
+                    return;
+                }
+            }
+
+            if (mode === 'signup' && role === 'user') {
+                if (!formData.phone || !/^[0-9]{10}$/.test(formData.phone.trim())) {
+                    setError('Phone number must be exactly 10 digits');
+                    setLoading(false);
                     return;
                 }
             }

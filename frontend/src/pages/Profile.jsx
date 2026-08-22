@@ -88,7 +88,10 @@ const Profile = () => {
     }, []);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        let { name, value } = e.target;
+        if (name === 'phone') {
+            value = value.replace(/[^0-9]/g, '').slice(0, 10);
+        }
         setProfile(prev => ({ ...prev, [name]: value }));
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     };
@@ -155,7 +158,12 @@ const Profile = () => {
 
         if (!String(profile.first_name || '').trim()) errs.first_name = 'Please fill out First Name';
         if (!String(profile.last_name || '').trim()) errs.last_name = 'Please fill out Last Name';
-        if (!String(profile.phone || '').trim()) errs.phone = 'Please fill out Direct Phone';
+        const phoneClean = String(profile.phone || '').trim();
+        if (!phoneClean) {
+            errs.phone = 'Please fill out Direct Phone';
+        } else if (!/^[0-9]{10}$/.test(phoneClean)) {
+            errs.phone = 'Phone number must be exactly 10 digits';
+        }
         if (!String(profile.location_city || '').trim()) errs.location_city = 'Please fill out Current Headquarters';
         if (!String(profile.university || '').trim()) errs.university = 'Please fill out Primary Institution';
         if (!String(profile.degree || '').trim()) errs.degree = 'Please fill out Degree Earned';

@@ -19,6 +19,10 @@ exports.registerUser = async (req, res) => {
     try {
         const { first_name, last_name, email, phone, password, location_city } = req.body;
 
+        if (phone && !/^[0-9]{10}$/.test(String(phone).trim())) {
+            return res.status(400).json({ message: 'Phone number must be exactly 10 digits' });
+        }
+
         const userExists = await User.findOne({ email });
         if (userExists) {
             return res.status(400).json({ message: 'User already exists' });
@@ -147,6 +151,12 @@ exports.updateProfile = async (req, res) => {
         const user = await User.findById(req.user._id);
 
         if (user) {
+            if (req.body.phone !== undefined && req.body.phone !== '') {
+                if (!/^[0-9]{10}$/.test(String(req.body.phone).trim())) {
+                    return res.status(400).json({ message: 'Phone number must be exactly 10 digits' });
+                }
+            }
+
             if (req.body.experience_years !== undefined && Number(req.body.experience_years) > 50) {
                 return res.status(400).json({ message: 'Experience cannot exceed 50 years' });
             }
