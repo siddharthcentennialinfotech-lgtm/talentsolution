@@ -82,6 +82,8 @@ const generateJobSchema = (job) => {
             }
         } : undefined
     };
+};
+
 const defaultSampleJobs = [
     {
         _id: '650000000000000000000101',

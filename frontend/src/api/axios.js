@@ -232,6 +232,7 @@ const initDb = () => {
       resume_url: '',
       skills: ['React', 'Node.js', 'MongoDB']
     }));
+  }
   if (!localStorage.getItem('local_max_slots')) {
     localStorage.setItem('local_max_slots', '3');
   }
