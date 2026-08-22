@@ -732,21 +732,6 @@ const Auth = () => {
                                         </svg>
                                         Google
                                     </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            localStorage.setItem('token', 'demo_guest_token');
-                                            localStorage.setItem('role', role);
-                                            localStorage.setItem('name', role === 'admin' ? 'Recruiter Admin' : 'Job Candidate');
-                                            toast.success(`Entered as ${role === 'admin' ? 'Recruiter' : 'Candidate'}!`);
-                                            navigate(role === 'admin' ? '/admin/dashboard' : '/jobs');
-                                        }}
-                                        className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md hover:opacity-95 transition-all"
-                                    >
-                                        <Sparkles className="w-4 h-4" />
-                                        <span>Instant Demo Access ({role === 'admin' ? 'Recruiter' : 'Candidate'})</span>
-                                    </button>
                                 </div>
                             </div>
 
