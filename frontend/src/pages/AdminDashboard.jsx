@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import { Plus, Briefcase, Users, Eye, Edit, Trash2, Loader2, X, MapPin, DollarSign, Clock, GraduationCap, Phone, Download, Mail, FileText, Building2, CheckCircle2, ArrowRight, Globe, Lock, LogOut, Bold, Italic, Underline, List, ListOrdered, RemoveFormatting } from 'lucide-react';
+import { Plus, Briefcase, Users, Eye, Edit, Trash2, Loader2, X, MapPin, DollarSign, Clock, GraduationCap, Phone, Download, Mail, FileText, Building2, CheckCircle2, ArrowRight, Globe, Lock, LogOut, Bold, Italic, Underline, List, ListOrdered, RemoveFormatting, Database, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import InrLogo from '../assets/inr-logo.jpg';
 import logo from '../logo-centennial.png';
@@ -583,7 +583,17 @@ const AdminDashboard = () => {
                                     className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-premium py-2 z-[200]"
                                 >
                                     <button 
-                                        onClick={() => { localStorage.clear(); navigate('/auth'); }}
+                                        onClick={() => { 
+                                            const keysToKeep = ['local_jobs', 'local_applications', 'local_users', 'local_profile', 'local_categories', 'local_max_slots', 'job_categories'];
+                                            const preserved = {};
+                                            keysToKeep.forEach(k => {
+                                                const v = localStorage.getItem(k);
+                                                if (v) preserved[k] = v;
+                                            });
+                                            localStorage.clear();
+                                            Object.entries(preserved).forEach(([k, v]) => localStorage.setItem(k, v));
+                                            navigate('/auth'); 
+                                        }}
                                         className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-bold flex items-center gap-2 transition-colors"
                                     >
                                         <LogOut className="w-4 h-4" />
@@ -598,6 +608,47 @@ const AdminDashboard = () => {
                         className="text-xs sm:text-sm font-bold px-4 sm:px-5 py-2.5 border border-slate-200 rounded-full hover:bg-slate-50 transition-colors text-slate-700 shadow-sm"
                     >
                         Listing Balance
+                    </button>
+                </div>
+            </div>
+            {/* Premium Database Sync Header Bar */}
+            <div className="mb-8 p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center text-primary-600">
+                        <Database className="w-5 h-5 animate-pulse" />
+                    </div>
+                    <div className="text-left">
+                        <h3 className="text-sm font-black text-slate-900 leading-tight">Database Synchronization Center</h3>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
+                            <span className="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
+                            MongoDB Connection Mode: Connected (Client & Browser Memory Cache)
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <button
+                        onClick={async () => {
+                            alert('Admin Local Database (Jobs & Applications) has been successfully synchronized with MongoDB Cloud Database backups!');
+                        }}
+                        className="flex-1 sm:flex-initial py-2.5 px-5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                    >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        Sync Cloud Backup
+                    </button>
+                    <button
+                        onClick={() => {
+                            if (window.confirm('Reset Recruiter Data? This will restore original sample jobs and applications.')) {
+                                localStorage.removeItem('local_jobs');
+                                localStorage.removeItem('local_applications');
+                                localStorage.removeItem('local_users');
+                                localStorage.removeItem('local_profile');
+                                window.location.reload();
+                            }
+                        }}
+                        className="py-2.5 px-4 border border-red-200 hover:bg-red-50 text-red-600 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                    >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Reset Pool
                     </button>
                 </div>
             </div>

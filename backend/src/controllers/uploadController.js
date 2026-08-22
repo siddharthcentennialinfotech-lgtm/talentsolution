@@ -14,7 +14,7 @@ exports.uploadResume = async (req, res) => {
         const fallbackUrl = `data:${mime};base64,${base64Data}`;
 
         // If Cloudinary API credentials exist, attempt Cloudinary upload
-        if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
+        if (process.env.CLOUDINARY_CLOUD_NAME || "dnvxdg8jp") {
             try {
                 const stream = cloudinary.uploader.upload_stream(
                     { 

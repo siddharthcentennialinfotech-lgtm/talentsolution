@@ -7,7 +7,7 @@ const otpStore = new Map(); // Store OTPs
 
 // Generate Token
 const generateToken = (id, role) => {
-    return jwt.sign({ id, role }, process.env.JWT_SECRET, {
+    return jwt.sign({ id, role }, process.env.JWT_SECRET || 'supersecretkey12345', {
         expiresIn: '30d',
     });
 };

@@ -12,7 +12,7 @@ const protect = async (req, res, next) => {
         try {
             token = req.headers.authorization.split(' ')[1];
             if (token && token !== 'demo_guest_token' && token !== 'mock_jwt_token_demo') {
-                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretkey12345');
 
                 if (decoded.role === 'admin') {
                     req.user = await Admin.findById(decoded.id).select('-password');
