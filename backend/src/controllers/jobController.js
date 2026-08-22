@@ -39,6 +39,9 @@ exports.createJob = async (req, res) => {
         if (experience_required !== undefined && Number(experience_required) > 50) {
             return res.status(400).json({ message: 'Experience cannot exceed 50 years' });
         }
+        if (openings_count !== undefined && (Number(openings_count) > 150 || Number(openings_count) <= 0)) {
+            return res.status(400).json({ message: 'Total openings must be between 1 and 150' });
+        }
 
         // Handle arrays (split strings if they come from textarea)
         const parseArray = (input) => {
@@ -150,6 +153,11 @@ exports.updateJob = async (req, res) => {
             const expReq = req.body.experience_required !== undefined ? req.body.experience_required : job.experience_required;
             if (expReq !== undefined && Number(expReq) > 50) {
                 return res.status(400).json({ message: 'Experience cannot exceed 50 years' });
+            }
+
+            const openings = req.body.openings_count !== undefined ? req.body.openings_count : job.openings_count;
+            if (openings !== undefined && (Number(openings) > 150 || Number(openings) <= 0)) {
+                return res.status(400).json({ message: 'Total openings must be between 1 and 150' });
             }
 
             console.log('Update Request Body:', JSON.stringify(req.body, null, 2));

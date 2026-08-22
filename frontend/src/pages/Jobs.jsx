@@ -88,6 +88,21 @@ const Jobs = () => {
         fetchJobs();
     }, [jobType, selectedRole]);
 
+    const [appliedJobIds, setAppliedJobIds] = useState(new Set());
+
+    useEffect(() => {
+        if (token && role === 'user') {
+            api.get('/applications/my/all')
+                .then(res => {
+                    if (Array.isArray(res.data)) {
+                        const ids = new Set(res.data.map(app => (app.job_id?._id || app.job_id)));
+                        setAppliedJobIds(ids);
+                    }
+                })
+                .catch(() => {});
+        }
+    }, [token, role]);
+
     const handleSearch = (e) => {
         e.preventDefault();
         fetchJobs();
@@ -100,6 +115,10 @@ const Jobs = () => {
         }
         if (role !== 'user') {
             alert('Only job seekers can apply for jobs.');
+            return;
+        }
+        if (appliedJobIds.has(job._id)) {
+            alert('You have already applied for this job.');
             return;
         }
 
@@ -184,6 +203,7 @@ const Jobs = () => {
                 job_id: selectedJob._id,
                 ...applicationForm
             });
+            setAppliedJobIds(prev => new Set([...prev, selectedJob._id]));
             setSuccess('Application submitted successfully!');
             setSuccessToast(true);
             setTimeout(() => {
@@ -337,11 +357,18 @@ const Jobs = () => {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex flex-col items-end">
-                                                    <span className="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full uppercase">
-                                                        {job.job_type}
-                                                    </span>
-                                                    <p className="text-slate-400 text-xs mt-2 flex items-center">
+                                                <div className="flex flex-col items-end gap-2">
+                                                    <div className="flex items-center gap-2">
+                                                        {appliedJobIds.has(job._id) && (
+                                                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 text-xs font-black rounded-full uppercase flex items-center gap-1">
+                                                                <CheckCircle2 className="w-3.5 h-3.5" /> Applied
+                                                            </span>
+                                                        )}
+                                                        <span className="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full uppercase">
+                                                            {job.job_type}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-slate-400 text-xs flex items-center">
                                                         <Calendar className="w-3 h-3 mr-1" />
                                                         {new Date(job.createdAt).toLocaleDateString()}
                                                     </p>
@@ -374,13 +401,31 @@ const Jobs = () => {
                                                 <p className="text-slate-500 text-sm line-clamp-2 max-w-lg">
                                                     {job.description?.replace(/<[^>]*>/g, '')}
                                                 </p>
-                                                <Link
-                                                    to={`/jobs/${job._id}`}
-                                                    className="text-slate-900 hover:text-primary-600 border border-slate-200 hover:border-primary-600 bg-white hover:bg-slate-50 py-2 px-6 rounded-lg text-sm font-bold flex items-center space-x-2 transition-colors"
-                                                >
-                                                    <span>View detail</span>
-                                                    <ArrowRight className="w-4 h-4" />
-                                                </Link>
+                                                <div className="flex items-center gap-3">
+                                                    {appliedJobIds.has(job._id) ? (
+                                                        <button
+                                                            disabled
+                                                            className="bg-emerald-50 text-emerald-600 border border-emerald-200 py-2 px-5 rounded-lg text-sm font-bold flex items-center space-x-1.5 cursor-not-allowed opacity-90"
+                                                        >
+                                                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                                            <span>Applied</span>
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleApplyClick(job)}
+                                                            className="bg-primary-600 hover:bg-primary-700 text-white py-2 px-5 rounded-lg text-sm font-bold flex items-center space-x-1.5 transition-all shadow-sm"
+                                                        >
+                                                            <span>Apply Now</span>
+                                                        </button>
+                                                    )}
+                                                    <Link
+                                                        to={`/jobs/${job._id}`}
+                                                        className="text-slate-900 hover:text-primary-600 border border-slate-200 hover:border-primary-600 bg-white hover:bg-slate-50 py-2 px-5 rounded-lg text-sm font-bold flex items-center space-x-2 transition-colors"
+                                                    >
+                                                        <span>View detail</span>
+                                                        <ArrowRight className="w-4 h-4" />
+                                                    </Link>
+                                                </div>
                                             </div>
                                         </motion.div>
                                     ))}
@@ -525,18 +570,29 @@ const Jobs = () => {
                                     ></textarea>
                                 </div>
 
-                                <button
-                                    type="submit"
-                                    disabled={applying || success === 'Application submitted successfully!' || uploadingResume || !applicationForm.resume_url}
-                                    className="w-full btn-primary py-4 text-lg font-bold flex items-center justify-center space-x-2 shadow-xl shadow-primary-200"
-                                >
-                                    {applying ? <Loader2 className="w-6 h-6 animate-spin" /> : (
-                                        <>
-                                            <span>Submit Application</span>
-                                            <Send className="w-5 h-5" />
-                                        </>
-                                    )}
-                                </button>
+                                {appliedJobIds.has(selectedJob._id) ? (
+                                    <button
+                                        type="button"
+                                        disabled
+                                        className="w-full bg-emerald-50 text-emerald-600 border border-emerald-200 py-4 text-lg font-bold flex items-center justify-center space-x-2 rounded-2xl cursor-not-allowed"
+                                    >
+                                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                                        <span>Applied</span>
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="submit"
+                                        disabled={applying || success === 'Application submitted successfully!' || uploadingResume || !applicationForm.resume_url}
+                                        className="w-full btn-primary py-4 text-lg font-bold flex items-center justify-center space-x-2 shadow-xl shadow-primary-200"
+                                    >
+                                        {applying ? <Loader2 className="w-6 h-6 animate-spin" /> : (
+                                            <>
+                                                <span>Submit Application</span>
+                                                <Send className="w-5 h-5" />
+                                            </>
+                                        )}
+                                    </button>
+                                )}
                             </form>
                         </motion.div>
                     </div>

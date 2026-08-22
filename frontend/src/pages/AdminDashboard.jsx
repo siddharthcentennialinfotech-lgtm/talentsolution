@@ -414,7 +414,13 @@ const AdminDashboard = () => {
         } else if (Number(formData.experience_required) < 0) {
             errs.experience_required = 'Experience cannot be negative';
         }
-        if (check(formData.openings_count)) errs.openings_count = 'Please fill out Openings';
+        if (check(formData.openings_count)) {
+            errs.openings_count = 'Please fill out Openings';
+        } else if (Number(formData.openings_count) > 150) {
+            errs.openings_count = 'Total openings cannot exceed 150';
+        } else if (Number(formData.openings_count) <= 0) {
+            errs.openings_count = 'Total openings must be at least 1';
+        }
         if (check(formData.salary_min)) errs.salary_min = 'Please fill out Minimum Salary';
         if (check(formData.salary_max)) errs.salary_max = 'Please fill out Maximum Salary';
 
@@ -987,6 +993,9 @@ const AdminDashboard = () => {
                                                         name="openings_count"
                                                         value={formData.openings_count}
                                                         type="number"
+                                                        min="1"
+                                                        max="150"
+                                                        placeholder="Max 150"
                                                         className={`w-full bg-slate-50 border-2 ${errors.openings_count ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 px-3 sm:px-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 text-xs sm:text-sm`}
                                                         onChange={handleChange}
                                                     />

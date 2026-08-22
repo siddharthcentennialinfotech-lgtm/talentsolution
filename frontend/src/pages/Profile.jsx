@@ -120,9 +120,33 @@ const Profile = () => {
             updated[index] = { ...updated[index], [field]: value };
             return { ...prev, work_experiences: updated };
         });
-        if (errors[`exp_${index}_${field}`]) {
-            setErrors(prev => ({ ...prev, [`exp_${index}_${field}`]: '' }));
-        }
+
+        const currentYear = new Date().getFullYear();
+        setErrors(prev => {
+            const newErrs = { ...prev };
+            delete newErrs[`exp_${index}_${field}`];
+
+            if (field === 'start_year') {
+                if (!value) {
+                    newErrs[`exp_${index}_start_year`] = 'Please fill out Start Year';
+                } else if (Number(value) > currentYear) {
+                    newErrs[`exp_${index}_start_year`] = `Start Year cannot exceed current year (${currentYear})`;
+                }
+            }
+
+            if (field === 'end_year') {
+                const valStr = String(value || '').trim().toLowerCase();
+                if (value && !['present', 'current'].includes(valStr)) {
+                    const endY = Number(value);
+                    if (isNaN(endY)) {
+                        newErrs[`exp_${index}_end_year`] = 'End Year must be a number or "Present"';
+                    } else if (endY > currentYear) {
+                        newErrs[`exp_${index}_end_year`] = `End Year cannot exceed current year (${currentYear})`;
+                    }
+                }
+            }
+            return newErrs;
+        });
     };
 
     const handleSave = async (e) => {

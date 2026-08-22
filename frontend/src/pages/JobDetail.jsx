@@ -119,6 +119,7 @@ const JobDetail = () => {
 
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
+    const [isApplied, setIsApplied] = useState(false);
 
     useEffect(() => {
         const fetchJob = async () => {
@@ -132,7 +133,18 @@ const JobDetail = () => {
             }
         };
         fetchJob();
-    }, [id]);
+
+        if (token && role === 'user') {
+            api.get('/applications/my/all')
+                .then(res => {
+                    if (Array.isArray(res.data)) {
+                        const hasApplied = res.data.some(app => (app.job_id?._id === id || app.job_id === id));
+                        setIsApplied(hasApplied);
+                    }
+                })
+                .catch(() => {});
+        }
+    }, [id, token, role]);
 
     useEffect(() => {
         if (job) {
@@ -158,6 +170,10 @@ const JobDetail = () => {
         }
         if (role !== 'user') {
             alert('Only job seekers can apply for jobs.');
+            return;
+        }
+        if (isApplied) {
+            alert('You have already applied for this job.');
             return;
         }
 
@@ -486,9 +502,17 @@ const JobDetail = () => {
                                 </div>
                             </div>
 
-                            {job.applicationCount >= 50 ? (
+                            {isApplied ? (
+                                <button
+                                    disabled
+                                    className="w-full py-5 mt-10 bg-emerald-50 text-emerald-600 border border-emerald-200 font-bold rounded-2xl text-center shadow-sm flex items-center justify-center gap-2 cursor-not-allowed"
+                                >
+                                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                                    <span>Applied</span>
+                                </button>
+                            ) : job.applicationCount >= 50 ? (
                                 <div className="w-full py-5 mt-10 bg-slate-100 text-slate-500 font-bold rounded-2xl text-center shadow-inner border border-slate-200">
-                                    2/2 Applications Reached
+                                    Applications Limit Reached
                                 </div>
                             ) : (
                                 <button

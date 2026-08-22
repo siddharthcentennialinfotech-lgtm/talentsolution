@@ -151,6 +151,21 @@ exports.updateProfile = async (req, res) => {
                 return res.status(400).json({ message: 'Experience cannot exceed 50 years' });
             }
 
+            if (Array.isArray(req.body.work_experiences)) {
+                const currentYear = new Date().getFullYear();
+                for (const exp of req.body.work_experiences) {
+                    if (exp.start_year && Number(exp.start_year) > currentYear) {
+                        return res.status(400).json({ message: `Start year cannot be in the future (${currentYear})` });
+                    }
+                    if (exp.end_year && !['present', 'current'].includes(String(exp.end_year).trim().toLowerCase())) {
+                        const endY = Number(exp.end_year);
+                        if (!isNaN(endY) && endY > currentYear) {
+                            return res.status(400).json({ message: `End year cannot be in the future (${currentYear})` });
+                        }
+                    }
+                }
+            }
+
             const fieldsToUpdate = [
                 'first_name', 'last_name', 'phone', 'location_city', 'location_state',
                 'country', 'degree', 'branch', 'specialization', 'university',
