@@ -25,9 +25,17 @@ const upload = multer({
     }
 });
 
+const handleMulterUpload = (req, res, next) => {
+    upload.single('resume')(req, res, (err) => {
+        if (err) {
+            return res.status(400).json({ message: err.message || 'File upload error' });
+        }
+        next();
+    });
+};
+
 // @route   POST /api/upload/resume
 // @access  Private/User
-// Note: We protect this route so only authenticated users can upload
-router.post('/resume', protect, upload.single('resume'), uploadResume);
+router.post('/resume', protect, handleMulterUpload, uploadResume);
 
 module.exports = router;

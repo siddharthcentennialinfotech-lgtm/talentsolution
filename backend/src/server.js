@@ -22,14 +22,18 @@ require('./models/Category');
 const app = express();
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: false
+}));
 
 app.use(cors({
-    origin: "*",
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With']
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('dev'));
 
 // Basic Route
@@ -48,7 +52,8 @@ app.use('/api/jobs', require('./routes/jobRoutes'));
 app.use('/api/applications', require('./routes/applicationRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
-// Port configuration
+
+// Dynamic Port configuration
 const PORT = process.env.PORT || 5000;
 
 if (require.main === module) {
