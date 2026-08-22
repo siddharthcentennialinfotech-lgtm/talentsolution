@@ -544,6 +544,31 @@ const AdminDashboard = () => {
         }
     };
 
+    const openResume = (resumeUrl) => {
+        if (!resumeUrl) {
+            alert('No resume uploaded for this applicant.');
+            return;
+        }
+        if (resumeUrl.startsWith('data:')) {
+            // Base64 data URL — create a Blob and open in new tab
+            try {
+                const [header, base64] = resumeUrl.split(',');
+                const mime = header.match(/:(.*?);/)[1];
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                const blob = new Blob([bytes], { type: mime });
+                const blobUrl = URL.createObjectURL(blob);
+                window.open(blobUrl, '_blank');
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+            } catch (e) {
+                alert('Could not open resume. It may be corrupted.');
+            }
+        } else {
+            window.open(resumeUrl, '_blank', 'noreferrer');
+        }
+    };
+
     const deleteApplicantApplication = async (appId) => {
         if (!window.confirm('Are you sure you want to remove this applicant?')) return;
         try {
@@ -1332,14 +1357,12 @@ const AdminDashboard = () => {
                                                         </select>
                                                     </div>
                                                     <div className="flex gap-4 items-center">
-                                                        <a
-                                                            href={app.resume_url}
-                                                            target="_blank"
-                                                            rel="noreferrer"
+                                                        <button
+                                                            onClick={() => openResume(app.resume_url)}
                                                             className="text-primary-600 text-sm font-bold hover:underline flex items-center gap-1"
                                                         >
                                                             <FileText className="w-4 h-4" /> View CV
-                                                        </a>
+                                                        </button>
                                                         <button
                                                             onClick={() => deleteApplicantApplication(app._id)}
                                                             className="text-red-500 hover:text-red-700 text-xs font-bold flex items-center gap-1 hover:underline"

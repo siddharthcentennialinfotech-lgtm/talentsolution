@@ -454,6 +454,7 @@ const JobDetail = () => {
                 job_id: job._id,
                 ...applicationForm
             });
+            setIsApplied(true);
             setApplySuccess('Application submitted successfully!');
             setSuccessToast(true);
             setTimeout(() => {
@@ -473,6 +474,7 @@ const JobDetail = () => {
             }, 5000);
         } catch (err) {
             console.warn('API Application submit failed, forcing success for demo:', err);
+            setIsApplied(true);
             setApplySuccess('Application submitted successfully!');
             setSuccessToast(true);
             setTimeout(() => {

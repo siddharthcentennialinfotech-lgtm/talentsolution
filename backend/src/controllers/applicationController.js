@@ -94,7 +94,10 @@ exports.applyToJob = async (req, res) => {
 // @access  Private/User
 exports.getMyApplications = async (req, res) => {
     try {
-        const applications = await Application.find({ user_id: req.user._id })
+        const applications = await Application.find({
+            user_id: req.user._id,
+            is_deleted_by_recruiter: { $ne: true }
+        })
             .populate('job_id')
             .sort({ createdAt: -1 });
 
@@ -286,9 +289,8 @@ exports.deleteApplication = async (req, res) => {
             return res.status(403).json({ message: 'Not authorized to delete this application' });
         }
 
-        // Mark as deleted for recruiter, set status to rejected so candidate still sees it
+        // Only mark as hidden from recruiter — do NOT change status so user never sees a spurious rejection
         application.is_deleted_by_recruiter = true;
-        application.status = 'rejected';
         await application.save();
 
         res.json({ success: true, message: 'Application removed from recruiter view' });

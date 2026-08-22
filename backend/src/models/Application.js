@@ -13,7 +13,7 @@ const applicationSchema = new mongoose.Schema({
     },
     resume_url: {
         type: String,
-        required: true // Snapshot copy as requested
+        default: ''
     },
     cover_letter: String,
     status: {
