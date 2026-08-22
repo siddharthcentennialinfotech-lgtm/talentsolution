@@ -435,60 +435,7 @@ const Profile = () => {
                             </div>
                         </div>
 
-                        {/* Direct MongoDB Database Sync Panel */}
-                        <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-premium text-left">
-                            <div className="flex items-center space-x-3 mb-6">
-                                <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center text-primary-600">
-                                    <Database className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-black text-slate-900 tracking-tight">Database Center</h4>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Browser Storage & Sync</p>
-                                </div>
-                            </div>
-                            
-                            <div className="space-y-4">
-                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
-                                    <span className="text-xs font-bold text-slate-500">Database Connection</span>
-                                    <span className="flex items-center gap-1.5 text-xs font-black text-green-600">
-                                        <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></span>
-                                        Connected (Memory Mode)
-                                    </span>
-                                </div>
 
-                                <button
-                                    type="button"
-                                    onClick={async () => {
-                                        setNotification({
-                                            type: 'success',
-                                            message: 'Offline browser database successfully synchronized with cloud database backups!'
-                                        });
-                                        setTimeout(() => setNotification(null), 5000);
-                                    }}
-                                    className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-slate-200"
-                                >
-                                    <RefreshCw className="w-4 h-4" />
-                                    Sync Cloud Backup
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (window.confirm('Reset local database? This will clear browser cache and reload original sample listings.')) {
-                                            localStorage.removeItem('local_jobs');
-                                            localStorage.removeItem('local_applications');
-                                            localStorage.removeItem('local_profile');
-                                            localStorage.removeItem('local_users');
-                                            window.location.reload();
-                                        }
-                                    }}
-                                    className="w-full py-3.5 border-2 border-red-500 hover:bg-red-50 text-red-500 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                    Reset Data Pool
-                                </button>
-                            </div>
-                        </div>
                     </motion.div>
 
                     {/* Main Form: Details */}

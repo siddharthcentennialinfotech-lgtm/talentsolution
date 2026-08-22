@@ -584,12 +584,13 @@ const AdminDashboard = () => {
                                 >
                                     <button 
                                         onClick={() => { 
-                                            const keysToKeep = ['local_jobs', 'local_applications', 'local_users', 'local_profile', 'local_categories', 'local_max_slots', 'job_categories'];
                                             const preserved = {};
-                                            keysToKeep.forEach(k => {
-                                                const v = localStorage.getItem(k);
-                                                if (v) preserved[k] = v;
-                                            });
+                                            for (let i = 0; i < localStorage.length; i++) {
+                                                const key = localStorage.key(i);
+                                                if (key && (key.startsWith('local_') || key === 'resume_data_url')) {
+                                                    preserved[key] = localStorage.getItem(key);
+                                                }
+                                            }
                                             localStorage.clear();
                                             Object.entries(preserved).forEach(([k, v]) => localStorage.setItem(k, v));
                                             navigate('/auth'); 
@@ -611,47 +612,7 @@ const AdminDashboard = () => {
                     </button>
                 </div>
             </div>
-            {/* Premium Database Sync Header Bar */}
-            <div className="mb-8 p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center text-primary-600">
-                        <Database className="w-5 h-5 animate-pulse" />
-                    </div>
-                    <div className="text-left">
-                        <h3 className="text-sm font-black text-slate-900 leading-tight">Database Synchronization Center</h3>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
-                            <span className="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
-                            MongoDB Connection Mode: Connected (Client & Browser Memory Cache)
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <button
-                        onClick={async () => {
-                            alert('Admin Local Database (Jobs & Applications) has been successfully synchronized with MongoDB Cloud Database backups!');
-                        }}
-                        className="flex-1 sm:flex-initial py-2.5 px-5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                    >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        Sync Cloud Backup
-                    </button>
-                    <button
-                        onClick={() => {
-                            if (window.confirm('Reset Recruiter Data? This will restore original sample jobs and applications.')) {
-                                localStorage.removeItem('local_jobs');
-                                localStorage.removeItem('local_applications');
-                                localStorage.removeItem('local_users');
-                                localStorage.removeItem('local_profile');
-                                window.location.reload();
-                            }
-                        }}
-                        className="py-2.5 px-4 border border-red-200 hover:bg-red-50 text-red-600 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                    >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Reset Pool
-                    </button>
-                </div>
-            </div>
+
 
             {/* Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

@@ -260,8 +260,46 @@ const api = axios.create({
     const getAppsList = () => JSON.parse(localStorage.getItem('local_applications') || '[]');
     const saveAppsList = (list) => localStorage.setItem('local_applications', JSON.stringify(list));
 
-    const getProfile = () => JSON.parse(localStorage.getItem('local_profile') || '{}');
-    const saveProfile = (p) => localStorage.setItem('local_profile', JSON.stringify(p));
+    const getProfile = () => {
+      const currentEmail = localStorage.getItem('userEmail') || localStorage.getItem('email') || 'user@demo.com';
+      const stored = localStorage.getItem('local_profile_' + currentEmail);
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {}
+      }
+      
+      // Fallback: look in local_users to get the registered first_name, last_name, phone
+      const users = JSON.parse(localStorage.getItem('local_users') || '[]');
+      const u = users.find(user => user.email === currentEmail) || {};
+      
+      const defaultProf = {
+        first_name: u.first_name || currentEmail.split('@')[0],
+        last_name: u.last_name || '',
+        email: currentEmail,
+        phone: u.phone || '9876543210',
+        location_city: '',
+        location_state: '',
+        degree: '',
+        branch: '',
+        university: '',
+        experience_years: '',
+        current_company: '',
+        resume_url: '',
+        skills: [],
+        work_experiences: []
+      };
+      
+      localStorage.setItem('local_profile_' + currentEmail, JSON.stringify(defaultProf));
+      localStorage.setItem('local_profile', JSON.stringify(defaultProf));
+      return defaultProf;
+    };
+    const saveProfile = (p) => {
+      localStorage.setItem('local_profile', JSON.stringify(p));
+      if (p && p.email) {
+        localStorage.setItem('local_profile_' + p.email, JSON.stringify(p));
+      }
+    };
 
     const getUsers = () => JSON.parse(localStorage.getItem('local_users') || '[]');
     const saveUsers = (list) => localStorage.setItem('local_users', JSON.stringify(list));
@@ -277,24 +315,26 @@ const api = axios.create({
     };
 
     // A. AUTH ENDPOINTS
-    // POST /auth/register
-    if (cleanPath === '/auth/register' && method === 'post') {
+    // POST /auth/register or /auth/user/signup or /auth/admin/signup
+    if ((cleanPath === '/auth/register' || cleanPath === '/auth/user/signup' || cleanPath === '/auth/admin/signup') && method === 'post') {
       const data = parsePayload(config.data);
       const users = getUsers();
       const existing = users.find(u => u.email === data.email);
       if (existing) {
         return { data: { message: 'User already exists' }, status: 400, statusText: 'Bad Request', headers: {}, config };
       }
+      const role = cleanPath.includes('admin') ? 'admin' : (data.role || 'user');
       const newUser = {
         _id: 'user_' + Date.now(),
-        first_name: data.first_name || '',
-        last_name: data.last_name || '',
+        first_name: data.first_name || (data.name ? data.name.split(' ')[0] : 'Demo'),
+        last_name: data.last_name || (data.name ? data.name.split(' ').slice(1).join(' ') : 'User'),
         email: data.email,
-        role: data.role || 'user',
+        role: role,
         phone: data.phone || '9876543210'
       };
       users.push(newUser);
       saveUsers(users);
+      localStorage.setItem('userEmail', newUser.email);
 
       // Also set as active profile if user
       if (newUser.role === 'user') {
@@ -311,14 +351,17 @@ const api = axios.create({
           experience_years: '',
           current_company: '',
           resume_url: '',
-          skills: []
+          skills: [],
+          work_experiences: []
         });
       }
 
       return {
         data: {
           user: newUser,
-          token: 'mock_jwt_token_demo'
+          token: 'mock_jwt_token_demo',
+          role: newUser.role,
+          name: `${newUser.first_name} ${newUser.last_name}`
         },
         status: 201,
         statusText: 'Created',
@@ -327,59 +370,66 @@ const api = axios.create({
       };
     }
 
-    // POST /auth/login
-    if (cleanPath === '/auth/login' && method === 'post') {
+    // POST /auth/login or /auth/user/login or /auth/admin/login
+    if ((cleanPath === '/auth/login' || cleanPath === '/auth/user/login' || cleanPath === '/auth/admin/login') && method === 'post') {
       const data = parsePayload(config.data);
       const users = getUsers();
-      const user = users.find(u => u.email === data.email) || users[0];
+      const role = cleanPath.includes('admin') ? 'admin' : (data.role || 'user');
+      let user = users.find(u => u.email === data.email && u.role === role);
+      if (!user) {
+        user = users.find(u => u.email === data.email);
+      }
       
       // Auto register if it is a new user login for convenience
-      if (data.email && !users.find(u => u.email === data.email)) {
-        const newUser = {
+      if (!user && data.email) {
+        user = {
           _id: 'user_' + Date.now(),
-          first_name: data.first_name || 'Demo',
-          last_name: data.last_name || 'User',
+          first_name: data.email.split('@')[0],
+          last_name: '',
           email: data.email,
-          role: data.role || 'user',
-          phone: data.phone || '9876543210'
+          role: role,
+          phone: '9876543210'
         };
-        users.push(newUser);
+        users.push(user);
         saveUsers(users);
-        
-        if (newUser.role === 'user') {
-          saveProfile({
-            first_name: newUser.first_name,
-            last_name: newUser.last_name,
-            email: newUser.email,
-            phone: newUser.phone,
-            location_city: '',
-            location_state: '',
-            degree: '',
-            branch: '',
-            university: '',
-            experience_years: '',
-            current_company: '',
-            resume_url: '',
-            skills: []
-          });
-        }
-        
-        return {
-          data: {
-            user: newUser,
-            token: 'mock_jwt_token_demo'
-          },
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config
+      } else if (!user) {
+        user = {
+          _id: 'user_default',
+          first_name: 'Demo',
+          last_name: role === 'admin' ? 'Recruiter' : 'User',
+          email: role === 'admin' ? 'admin@demo.com' : 'user@demo.com',
+          role: role,
+          phone: '9876543210'
         };
       }
 
+      localStorage.setItem('userEmail', user.email);
+      
+      if (user.role === 'user') {
+        saveProfile({
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          phone: user.phone,
+          location_city: '',
+          location_state: '',
+          degree: '',
+          branch: '',
+          university: '',
+          experience_years: '',
+          current_company: '',
+          resume_url: '',
+          skills: [],
+          work_experiences: []
+        });
+      }
+      
       return {
         data: {
           user,
-          token: 'mock_jwt_token_demo'
+          token: 'mock_jwt_token_demo',
+          role: user.role,
+          name: `${user.first_name} ${user.last_name}`
         },
         status: 200,
         statusText: 'OK',
@@ -529,12 +579,15 @@ const api = axios.create({
     if (cleanPath === '/applications' && method === 'post') {
       const data = parsePayload(config.data);
       const apps = getAppsList();
+      const userEmail = localStorage.getItem('userEmail') || getProfile().email || 'user@demo.com';
 
       const newApp = {
         _id: 'app_' + Date.now(),
         status: 'applied',
         createdAt: new Date().toISOString(),
+        applied_at: new Date().toISOString(),
         user_id: getProfile(),
+        user_email: userEmail,
         ...data
       };
       apps.unshift(newApp);
@@ -546,10 +599,15 @@ const api = axios.create({
     if (cleanPath === '/applications/my/all' && method === 'get') {
       const apps = getAppsList();
       const jobs = getJobsList();
-      const userEmail = getProfile().email || 'user@demo.com';
+      const userEmail = localStorage.getItem('userEmail') || getProfile().email || 'user@demo.com';
 
       // Retrieve all local applications
-      const myApps = apps.filter(a => a.user_id?.email === userEmail || a.user_id === userEmail || !a.user_id).map(a => {
+      const myApps = apps.filter(a => 
+        a.user_email === userEmail || 
+        a.user_id?.email === userEmail || 
+        a.user_id === userEmail || 
+        !a.user_email
+      ).map(a => {
         const matchedJob = jobs.find(j => j._id === a.job_id || j.job_id === a.job_id) || jobs[0];
         return { ...a, job_id: matchedJob };
       });
@@ -625,8 +683,8 @@ const api = axios.create({
       return { data: p, status: 200, statusText: 'OK', headers: {}, config };
     }
 
-    // PUT /auth/user/update-profile
-    if (cleanPath === '/auth/user/update-profile' && method === 'put') {
+    // PUT /auth/user/update-profile or /auth/user/profile
+    if ((cleanPath === '/auth/user/update-profile' || cleanPath === '/auth/user/profile') && method === 'put') {
       const data = parsePayload(config.data);
       const p = getProfile();
       const updated = { ...p, ...data };

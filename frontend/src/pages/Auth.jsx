@@ -79,6 +79,8 @@ const Auth = () => {
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('role', data.role);
                     localStorage.setItem('name', data.name);
+                    localStorage.setItem('userEmail', info.email);
+                    localStorage.setItem('email', info.email);
 
                     toast.success('Successfully authenticated with Google!');
                     navigate(data.role === 'admin' ? '/admin/dashboard' : '/jobs');
@@ -119,6 +121,8 @@ const Auth = () => {
             localStorage.setItem('token', data.token);
             localStorage.setItem('role', data.role);
             localStorage.setItem('name', data.name);
+            localStorage.setItem('userEmail', payload.email);
+            localStorage.setItem('email', payload.email);
 
             toast.success('Successfully authenticated with Apple!');
             navigate(data.role === 'admin' ? '/admin/dashboard' : '/jobs');
@@ -215,6 +219,10 @@ const Auth = () => {
             localStorage.setItem('token', token);
             localStorage.setItem('role', role);
             localStorage.setItem('name', name);
+            if (formData.email) {
+                localStorage.setItem('userEmail', formData.email);
+                localStorage.setItem('email', formData.email);
+            }
 
             navigate(role === 'admin' ? '/admin/dashboard' : '/jobs');
         } catch (err) {

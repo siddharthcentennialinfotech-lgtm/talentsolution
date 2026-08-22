@@ -11,13 +11,14 @@ const Navbar = () => {
     const role = localStorage.getItem('role');
 
     const handleLogout = () => {
-        // Preserve persistent local database keys
-        const keysToKeep = ['local_jobs', 'local_applications', 'local_users', 'local_profile', 'local_categories', 'local_max_slots', 'job_categories'];
+        // Preserve all persistent local database keys dynamically (starts with local_ or resume_data_url)
         const preserved = {};
-        keysToKeep.forEach(k => {
-            const v = localStorage.getItem(k);
-            if (v) preserved[k] = v;
-        });
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('local_') || key === 'resume_data_url')) {
+                preserved[key] = localStorage.getItem(key);
+            }
+        }
         localStorage.clear();
         Object.entries(preserved).forEach(([k, v]) => localStorage.setItem(k, v));
         navigate('/auth');
