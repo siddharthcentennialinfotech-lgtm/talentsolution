@@ -227,6 +227,14 @@ const JobDetail = () => {
 
     const handleApplicationSubmit = async (e) => {
         e.preventDefault();
+        if (Number(applicationForm.experience_years) > 50) {
+            setApplyError('Experience cannot exceed 50 years');
+            return;
+        }
+        if (Number(applicationForm.experience_years) < 0) {
+            setApplyError('Experience cannot be negative');
+            return;
+        }
         setApplying(true);
         setApplyError('');
         try {

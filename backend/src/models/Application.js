@@ -25,6 +25,10 @@ const applicationSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    is_deleted_by_recruiter: {
+        type: Boolean,
+        default: false
+    },
     // Snapshot fields to capture user state at application time
     degree: String,
     branch: String,

@@ -147,6 +147,10 @@ exports.updateProfile = async (req, res) => {
         const user = await User.findById(req.user._id);
 
         if (user) {
+            if (req.body.experience_years !== undefined && Number(req.body.experience_years) > 50) {
+                return res.status(400).json({ message: 'Experience cannot exceed 50 years' });
+            }
+
             const fieldsToUpdate = [
                 'first_name', 'last_name', 'phone', 'location_city', 'location_state',
                 'country', 'degree', 'branch', 'specialization', 'university',

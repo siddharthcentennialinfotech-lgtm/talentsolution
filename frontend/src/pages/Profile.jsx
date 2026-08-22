@@ -82,6 +82,14 @@ const Profile = () => {
 
     const handleSave = async (e) => {
         e.preventDefault();
+        if (Number(profile.experience_years) > 50) {
+            setNotification({ type: 'error', text: 'Experience cannot exceed 50 years' });
+            return;
+        }
+        if (Number(profile.experience_years) < 0) {
+            setNotification({ type: 'error', text: 'Experience cannot be negative' });
+            return;
+        }
         setSaving(true);
         setNotification(null);
         try {

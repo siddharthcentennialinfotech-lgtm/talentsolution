@@ -407,10 +407,24 @@ const AdminDashboard = () => {
         if (check(formData.company_name)) errs.company_name = 'Please fill out Company Name';
         if (check(formData.role)) errs.role = 'Please select Job Role / Category';
         if (check(formData.location_city)) errs.location_city = 'Please fill out Primary Location';
-        if (check(formData.experience_required)) errs.experience_required = 'Please fill out Experience Required';
+        if (check(formData.experience_required)) {
+            errs.experience_required = 'Please fill out Experience Required';
+        } else if (Number(formData.experience_required) > 50) {
+            errs.experience_required = 'Experience cannot exceed 50 years';
+        } else if (Number(formData.experience_required) < 0) {
+            errs.experience_required = 'Experience cannot be negative';
+        }
         if (check(formData.openings_count)) errs.openings_count = 'Please fill out Openings';
         if (check(formData.salary_min)) errs.salary_min = 'Please fill out Minimum Salary';
         if (check(formData.salary_max)) errs.salary_max = 'Please fill out Maximum Salary';
+
+        if (!check(formData.salary_min) && !check(formData.salary_max)) {
+            if (Number(formData.salary_min) > Number(formData.salary_max)) {
+                errs.salary_min = 'Min salary cannot be greater than Max salary';
+                errs.salary_max = 'Max salary must be greater than or equal to Min salary';
+            }
+        }
+
         if (check(formData.description)) errs.description = 'Please fill out Full Job Description';
         if (check(formData.requirements)) errs.requirements = 'Please fill out Required Qualifications';
         if (check(formData.responsibilities)) errs.responsibilities = 'Please fill out Key Responsibilities';
@@ -524,18 +538,29 @@ const AdminDashboard = () => {
         }
     };
 
+    const deleteApplicantApplication = async (appId) => {
+        if (!window.confirm('Are you sure you want to remove this applicant?')) return;
+        try {
+            await api.delete(`/applications/${appId}`);
+            setApplications(prev => prev.filter(app => app._id !== appId));
+            fetchAdminJobs();
+        } catch (err) {
+            alert('Failed to remove applicant');
+        }
+    };
+
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-10">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-24 sm:pb-32 min-h-screen">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-                <div className="flex items-center gap-4">
-                    <img src={logo} alt="Centennial Infotech Logo" className="h-12 w-auto object-contain hidden sm:block" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <img src={logo} alt="Centennial Infotech Logo" className="h-10 sm:h-12 w-auto object-contain" />
                     <div>
-                        <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Welcome Back, 👋</h1>
-                        <p className="text-[14px] text-slate-500 mt-1">Here is the summary of overall performance</p>
+                        <h1 className="text-xl sm:text-[28px] font-bold text-slate-900 tracking-tight">Welcome Back, 👋</h1>
+                        <p className="text-xs sm:text-[14px] text-slate-500 mt-0.5">Here is the summary of overall performance</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-4 mt-4 md:mt-0">
+                <div className="flex items-center gap-3 sm:gap-4 mt-2 sm:mt-0 justify-between sm:justify-end">
                     <div className="relative">
                         <button 
                             onClick={() => setShowProfileMenu(!showProfileMenu)} 
@@ -564,7 +589,7 @@ const AdminDashboard = () => {
                     </div>
                     <button
                         onClick={() => setShowPurchaseModal(true)}
-                        className="text-sm font-bold px-5 py-2.5 border border-slate-200 rounded-full hover:bg-slate-50 transition-colors text-slate-700 shadow-sm"
+                        className="text-xs sm:text-sm font-bold px-4 sm:px-5 py-2.5 border border-slate-200 rounded-full hover:bg-slate-50 transition-colors text-slate-700 shadow-sm"
                     >
                         Listing Balance
                     </button>
@@ -572,7 +597,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 {[
                     { label: 'Total Candidates', value: jobs.reduce((acc, job) => acc + (job.applicationCount || 0), 0), icon: Users, isDark: true, bg: 'bg-[#18345c]', color: 'text-blue-400' },
                     { label: 'Active J&I', value: jobs.filter(j => j.status === 'open').length, icon: Briefcase, bg: 'bg-[#f4ebe6]', color: 'text-[#e55353]', subText: {label: 'Total Registrations', val: 0} },
@@ -618,9 +643,9 @@ const AdminDashboard = () => {
             </div>
 
             {/* Job Table */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                    <h2 className="text-lg font-bold text-slate-800">Recent Listing</h2>
+            <div className="bg-white rounded-2xl sm:rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-800">Recent Listing</h2>
                     <button
                         disabled={jobs.length >= adminStats.maxJobsAllowed}
                         onClick={() => {
@@ -642,7 +667,7 @@ const AdminDashboard = () => {
                             });
                             setShowModal(true);
                         }}
-                        className={`py-2 px-4 flex items-center justify-center space-x-1.5 rounded-lg text-sm font-bold ${jobs.length >= adminStats.maxJobsAllowed ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm'}`}
+                        className={`py-2 px-3 sm:px-4 flex items-center justify-center space-x-1.5 rounded-lg text-xs sm:text-sm font-bold ${jobs.length >= adminStats.maxJobsAllowed ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm'}`}
                     >
                         <Plus className="w-4 h-4" />
                         <span>{jobs.length >= adminStats.maxJobsAllowed ? 'Listings Empty' : 'Post New'}</span>
@@ -654,8 +679,8 @@ const AdminDashboard = () => {
                         <p className="text-slate-500 font-medium">Loading your dashbord...</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto text-left">
-                        <table className="w-full">
+                    <div className="overflow-x-auto text-left w-full">
+                        <table className="w-full min-w-[640px]">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-100 text-left">
                                     <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Title / Details</th>
@@ -733,43 +758,70 @@ const AdminDashboard = () => {
                 )}
             </div>
 
+            {/* Admin Footer & Bottom Padding Block for Mobile Scroll */}
+            <footer className="mt-8 sm:mt-12 pt-8 pb-12 sm:pb-16 border-t border-slate-200/80 bg-white rounded-3xl p-6 sm:p-10 shadow-sm text-slate-600">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left mb-8">
+                    <div className="flex flex-col items-center md:items-start gap-2">
+                        <div className="flex items-center gap-3">
+                            <img src={logo} alt="Centennial Infotech Logo" className="h-10 sm:h-12 w-auto object-contain" />
+                            <span className="text-lg sm:text-xl font-bold text-slate-900">Centennial <span className="text-primary-600">Talent Solutions</span></span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-slate-500 font-medium max-w-sm mt-1">Empowering top engineering and recruitment teams with real-time talent matching.</p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm font-bold text-slate-700">
+                        <Link to="/admin/dashboard" className="hover:text-primary-600 transition-colors">Admin Dashboard</Link>
+                        <Link to="/admin/candidates" className="hover:text-primary-600 transition-colors">All Candidates</Link>
+                        <Link to="/jobs" className="hover:text-primary-600 transition-colors">Public Job Portal</Link>
+                    </div>
+                </div>
+
+                <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold text-slate-400 text-center sm:text-left">
+                    <p>© {new Date().getFullYear()} Centennial Talent Solutions. All rights reserved.</p>
+                    <p className="text-[11px] uppercase tracking-widest text-slate-400">Recruiter Control Center</p>
+                </div>
+            </footer>
+
+            {/* Generous Blank Space at Bottom for Mobile Viewport Scrollability */}
+            <div className="h-28 sm:h-36 w-full block" aria-hidden="true" />
+
             {/* Create/Edit Job Modal - Indeed Inspired Professional Interface */}
             <AnimatePresence>
                 {showModal && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                            className="bg-white w-full max-w-4xl rounded-[2.5rem] shadow-premium overflow-hidden flex flex-col max-h-[95vh] border border-slate-200"
+                            className="bg-white w-full max-w-4xl rounded-2xl sm:rounded-[2.5rem] shadow-premium overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[95vh] border border-slate-200 my-auto"
                         >
                             {/* Modal Header */}
-                            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                            <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">{editingJob ? 'Refine Job Listing' : 'Create New Opportunity'}</h2>
-                                    <p className="text-slate-400 text-sm font-medium mt-1">{editingJob ? `ID: ${formData.job_id}` : 'Draft your next stellar posting'}</p>
+                                    <h2 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight">{editingJob ? 'Refine Job Listing' : 'Create New Opportunity'}</h2>
+                                    <p className="text-slate-400 text-xs sm:text-sm font-medium mt-0.5">{editingJob ? `ID: ${formData.job_id}` : 'Draft your next stellar posting'}</p>
                                 </div>
                                 <button
                                     onClick={() => {
                                         setShowModal(false);
                                         setEditingJob(null);
                                     }}
-                                    className="p-3 hover:bg-slate-100 rounded-2xl text-slate-400 hover:text-slate-600 transition-colors"
+                                    className="p-2 sm:p-3 hover:bg-slate-100 rounded-2xl text-slate-400 hover:text-slate-600 transition-colors"
                                 >
-                                    <X className="w-6 h-6" />
+                                    <X className="w-5 h-5 sm:w-6 sm:h-6" />
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit} noValidate className="p-8 overflow-y-auto space-y-10 custom-scrollbar bg-slate-50/50">
+                            <form onSubmit={handleSubmit} noValidate className="p-4 sm:p-8 overflow-y-auto space-y-6 sm:space-y-10 custom-scrollbar bg-slate-50/50">
                                 {/* Section 1: Basic Information */}
                                 <section>
-                                    <div className="flex items-center space-x-3 mb-6">
+                                    <div className="flex items-center space-x-3 mb-4 sm:mb-6">
                                         <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center text-primary-600">
                                             <Briefcase className="w-4 h-4" />
                                         </div>
-                                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.15em]">1. Basic Information</h3>
+                                        <h3 className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-[0.15em]">1. Basic Information</h3>
                                     </div>
-                                    <div className="grid md:grid-cols-2 gap-6 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm">
                                         <div className="space-y-2">
                                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Job Title <span className="text-red-500">*</span></label>
                                             <div className="relative group">
@@ -779,7 +831,7 @@ const AdminDashboard = () => {
                                                 <input
                                                     name="title"
                                                     value={formData.title}
-                                                    className={`w-full bg-slate-50 border-2 ${errors.title ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900`}
+                                                    className={`w-full bg-slate-50 border-2 ${errors.title ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 text-sm`}
                                                     placeholder="e.g. Senior Frontend Engineer"
                                                     onChange={handleChange}
                                                 />
@@ -795,7 +847,7 @@ const AdminDashboard = () => {
                                                 <input
                                                     name="company_name"
                                                     value={formData.company_name}
-                                                    className={`w-full bg-slate-50 border-2 ${errors.company_name ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900`}
+                                                    className={`w-full bg-slate-50 border-2 ${errors.company_name ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 text-sm`}
                                                     placeholder="Centennial Partner Name"
                                                     onChange={handleChange}
                                                 />
@@ -803,7 +855,7 @@ const AdminDashboard = () => {
                                             {errors.company_name && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.company_name}</p>}
                                         </div>
                                     </div>
-                                    <div className="space-y-3 mt-6">
+                                    <div className="space-y-3 mt-4 sm:mt-6">
                                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Job Role / Category <span className="text-red-500">*</span></label>
                                         <div className="relative group">
                                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary-500 transition-colors">
@@ -812,7 +864,7 @@ const AdminDashboard = () => {
                                             <select
                                                 name="role"
                                                 value={formData.role}
-                                                className={`w-full bg-slate-50 border-2 ${errors.role ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none`}
+                                                className={`w-full bg-slate-50 border-2 ${errors.role ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none text-sm`}
                                                 onChange={handleChange}
                                             >
                                                 {categories.map(cat => {
@@ -865,14 +917,14 @@ const AdminDashboard = () => {
 
                                 {/* Section 2: Details & Logistics */}
                                 <section>
-                                    <div className="flex items-center space-x-3 mb-6">
+                                    <div className="flex items-center space-x-3 mb-4 sm:mb-6">
                                         <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
                                             <MapPin className="w-4 h-4" />
                                         </div>
-                                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.15em]">2. Details & Logistics</h3>
+                                        <h3 className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-[0.15em]">2. Details & Logistics</h3>
                                     </div>
-                                    <div className="grid md:grid-cols-2 gap-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-                                        <div className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 bg-white p-4 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm">
+                                        <div className="space-y-4 sm:space-y-6">
                                             <div className="space-y-2">
                                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Primary Location <span className="text-red-500">*</span></label>
                                                 <div className="relative group">
@@ -880,20 +932,20 @@ const AdminDashboard = () => {
                                                     <input
                                                         name="location_city"
                                                         value={formData.location_city}
-                                                        className={`w-full bg-slate-50 border-2 ${errors.location_city ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900`}
+                                                        className={`w-full bg-slate-50 border-2 ${errors.location_city ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 text-sm`}
                                                         placeholder="City, State"
                                                         onChange={handleChange}
                                                     />
                                                 </div>
                                                 {errors.location_city && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.location_city}</p>}
                                             </div>
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-2 gap-3 sm:gap-4">
                                                 <div className="space-y-2">
                                                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Job Type <span className="text-red-500">*</span></label>
                                                     <select
                                                         name="job_type"
                                                         value={formData.job_type}
-                                                        className={`w-full bg-slate-50 border-2 ${errors.job_type ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 px-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none`}
+                                                        className={`w-full bg-slate-50 border-2 ${errors.job_type ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 px-3 sm:px-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none text-xs sm:text-sm`}
                                                         onChange={handleChange}
                                                     >
                                                         <option value="full-time">Full-time</option>
@@ -908,7 +960,7 @@ const AdminDashboard = () => {
                                                     <select
                                                         name="work_mode"
                                                         value={formData.work_mode}
-                                                        className={`w-full bg-slate-50 border-2 ${errors.work_mode ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 px-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none`}
+                                                        className={`w-full bg-slate-50 border-2 ${errors.work_mode ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 px-3 sm:px-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none text-xs sm:text-sm`}
                                                         onChange={handleChange}
                                                     >
                                                         <option value="onsite">On-site</option>
@@ -923,7 +975,7 @@ const AdminDashboard = () => {
                                                         name="experience_required"
                                                         value={formData.experience_required}
                                                         type="number"
-                                                        className={`w-full bg-slate-50 border-2 ${errors.experience_required ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 px-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900`}
+                                                        className={`w-full bg-slate-50 border-2 ${errors.experience_required ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 px-3 sm:px-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 text-xs sm:text-sm`}
                                                         placeholder="Years"
                                                         onChange={handleChange}
                                                     />
@@ -935,7 +987,7 @@ const AdminDashboard = () => {
                                                         name="openings_count"
                                                         value={formData.openings_count}
                                                         type="number"
-                                                        className={`w-full bg-slate-50 border-2 ${errors.openings_count ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 px-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900`}
+                                                        className={`w-full bg-slate-50 border-2 ${errors.openings_count ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 px-3 sm:px-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 text-xs sm:text-sm`}
                                                         onChange={handleChange}
                                                     />
                                                     {errors.openings_count && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.openings_count}</p>}
@@ -944,29 +996,29 @@ const AdminDashboard = () => {
                                         </div>
                                         <div className="space-y-4 pt-6 border-t border-slate-50">
                                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left">Annual Compensation Range <span className="text-red-500">*</span></label>
-                                            <div className="flex gap-4">
-                                                <div className="w-24">
+                                            <div className="flex flex-col sm:flex-row gap-3">
+                                                <div className="w-full sm:w-28">
                                                     <select
                                                         name="currency"
                                                         value={formData.currency}
-                                                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 px-3 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none"
+                                                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 px-3 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-bold text-slate-900 appearance-none text-xs sm:text-sm"
                                                         onChange={handleChange}
                                                     >
                                                         <option value="INR">₹ INR</option>
                                                         <option value="USD">$ USD</option>
                                                     </select>
                                                 </div>
-                                                <div className="flex-1 grid grid-cols-2 gap-4">
+                                                <div className="w-full flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                     <div>
                                                         <div className="relative group">
-                                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center">
+                                                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
                                                                 {renderCurrencySymbol(formData.currency, 'w-4 h-4')}
                                                             </span>
                                                             <input
                                                                 name="salary_min"
                                                                 value={formData.salary_min}
                                                                 type="number"
-                                                                className={`w-full bg-slate-50 border-2 ${errors.salary_min ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-10 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900`}
+                                                                className={`w-full bg-slate-50 border-2 ${errors.salary_min ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-9 pr-3 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 text-xs sm:text-sm`}
                                                                 placeholder="Min (e.g. 50000)"
                                                                 onChange={handleChange}
                                                             />
@@ -975,14 +1027,14 @@ const AdminDashboard = () => {
                                                     </div>
                                                     <div>
                                                         <div className="relative group">
-                                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center">
+                                                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
                                                                 {renderCurrencySymbol(formData.currency, 'w-4 h-4')}
                                                             </span>
                                                             <input
                                                                 name="salary_max"
                                                                 value={formData.salary_max}
                                                                 type="number"
-                                                                className={`w-full bg-slate-50 border-2 ${errors.salary_max ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-10 pr-4 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900`}
+                                                                className={`w-full bg-slate-50 border-2 ${errors.salary_max ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 pl-9 pr-3 outline-none focus:bg-white transition-all duration-300 font-bold text-slate-900 text-xs sm:text-sm`}
                                                                 placeholder="Max (e.g. 100000)"
                                                                 onChange={handleChange}
                                                             />
@@ -1012,13 +1064,13 @@ const AdminDashboard = () => {
 
                                 {/* Section 3: Professional Content */}
                                 <section>
-                                    <div className="flex items-center space-x-3 mb-6">
+                                    <div className="flex items-center space-x-3 mb-4 sm:mb-6">
                                         <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
                                             <CheckCircle2 className="w-4 h-4" />
                                         </div>
-                                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.15em]">3. Job Content</h3>
+                                        <h3 className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-[0.15em]">3. Job Content</h3>
                                     </div>
-                                    <div className="space-y-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                                    <div className="space-y-6 sm:space-y-8 bg-white p-4 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm">
                                         <div className="space-y-2">
                                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left">Full Job Description <span className="text-red-500">*</span></label>
                                             <RichTextEditor
@@ -1030,14 +1082,14 @@ const AdminDashboard = () => {
                                             />
                                             {errors.description && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.description}</p>}
                                         </div>
-                                        <div className="grid md:grid-cols-2 gap-8">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
                                             <div className="space-y-2">
                                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left">Required Qualifications <span className="text-red-500">*</span></label>
                                                 <textarea
                                                     name="requirements"
                                                     value={formData.requirements}
                                                     rows="4"
-                                                    className={`w-full bg-slate-50 border-2 ${errors.requirements ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-4 px-6 outline-none focus:bg-white transition-all duration-300 font-medium text-slate-600 resize-none leading-relaxed`}
+                                                    className={`w-full bg-slate-50 border-2 ${errors.requirements ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 sm:py-4 px-4 sm:px-6 outline-none focus:bg-white transition-all duration-300 font-medium text-slate-600 resize-none leading-relaxed text-xs sm:text-sm`}
                                                     placeholder="Skills, experience, and certifications..."
                                                     onChange={handleChange}
                                                 />
@@ -1049,7 +1101,7 @@ const AdminDashboard = () => {
                                                     name="responsibilities"
                                                     value={formData.responsibilities}
                                                     rows="4"
-                                                    className={`w-full bg-slate-50 border-2 ${errors.responsibilities ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-4 px-6 outline-none focus:bg-white transition-all duration-300 font-medium text-slate-600 resize-none leading-relaxed`}
+                                                    className={`w-full bg-slate-50 border-2 ${errors.responsibilities ? 'border-red-500 focus:border-red-500' : 'border-slate-100 focus:border-primary-500'} rounded-2xl py-3.5 sm:py-4 px-4 sm:px-6 outline-none focus:bg-white transition-all duration-300 font-medium text-slate-600 resize-none leading-relaxed text-xs sm:text-sm`}
                                                     placeholder="Day-to-day tasks and expectations..."
                                                     onChange={handleChange}
                                                 />
@@ -1064,9 +1116,9 @@ const AdminDashboard = () => {
                                     <button
                                         type="submit"
                                         disabled={formLoading}
-                                        className="w-full btn-premium btn-premium-primary py-5 rounded-2xl shadow-xl shadow-primary-100 group overflow-hidden relative"
+                                        className="w-full btn-premium btn-premium-primary py-4 sm:py-5 rounded-2xl shadow-xl shadow-primary-100 group overflow-hidden relative"
                                     >
-                                        <span className="relative z-10 flex items-center justify-center space-x-3 text-lg">
+                                        <span className="relative z-10 flex items-center justify-center space-x-3 text-base sm:text-lg">
                                             {formLoading ? (
                                                 <Loader2 className="w-6 h-6 animate-spin text-white" />
                                             ) : (
@@ -1258,7 +1310,7 @@ const AdminDashboard = () => {
                                                             <option value="rejected">Rejected</option>
                                                         </select>
                                                     </div>
-                                                    <div className="flex gap-4">
+                                                    <div className="flex gap-4 items-center">
                                                         <a
                                                             href={app.resume_url}
                                                             target="_blank"
@@ -1267,6 +1319,13 @@ const AdminDashboard = () => {
                                                         >
                                                             <FileText className="w-4 h-4" /> View CV
                                                         </a>
+                                                        <button
+                                                            onClick={() => deleteApplicantApplication(app._id)}
+                                                            className="text-red-500 hover:text-red-700 text-xs font-bold flex items-center gap-1 hover:underline"
+                                                            title="Remove Applicant"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" /> Remove
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>

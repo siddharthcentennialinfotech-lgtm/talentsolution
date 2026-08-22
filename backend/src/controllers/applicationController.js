@@ -19,6 +19,10 @@ exports.applyToJob = async (req, res) => {
             current_company
         } = req.body;
 
+        if (experience_years !== undefined && Number(experience_years) > 50) {
+            return res.status(400).json({ message: 'Experience cannot exceed 50 years' });
+        }
+
         // Check if job exists and is open
         const job = await Job.findById(job_id);
         if (!job) {
@@ -92,7 +96,10 @@ exports.getJobApplications = async (req, res) => {
         }
 
         console.log('Fetching applications for jobId:', req.params.jobId);
-        const applications = await Application.find({ job_id: req.params.jobId })
+        const applications = await Application.find({
+            job_id: req.params.jobId,
+            is_deleted_by_recruiter: { $ne: true }
+        })
             .populate({
                 path: 'user_id',
                 select: 'first_name last_name email phone location_city location_state degree branch specialization experience_years university graduation_year current_company skills current_salary expected_salary linkedin_url',
@@ -174,9 +181,15 @@ exports.getAllCandidates = async (req, res) => {
         const jobs = await Job.find({ posted_by_admin_id: req.user._id }).select('_id');
         const jobIds = jobs.map(job => job._id);
 
-        const total = await Application.countDocuments({ job_id: { $in: jobIds } });
+        const total = await Application.countDocuments({
+            job_id: { $in: jobIds },
+            is_deleted_by_recruiter: { $ne: true }
+        });
 
-        const applications = await Application.find({ job_id: { $in: jobIds } })
+        const applications = await Application.find({
+            job_id: { $in: jobIds },
+            is_deleted_by_recruiter: { $ne: true }
+        })
             .populate('job_id', 'title role job_id')
             .populate({
                 path: 'user_id',
@@ -216,8 +229,12 @@ exports.deleteApplication = async (req, res) => {
             return res.status(403).json({ message: 'Not authorized to delete this application' });
         }
 
-        await application.deleteOne();
-        res.json({ success: true, message: 'Application removed' });
+        // Mark as deleted for recruiter, set status to rejected so candidate still sees it
+        application.is_deleted_by_recruiter = true;
+        application.status = 'rejected';
+        await application.save();
+
+        res.json({ success: true, message: 'Application removed from recruiter view' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

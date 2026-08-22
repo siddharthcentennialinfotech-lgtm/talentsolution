@@ -33,6 +33,13 @@ exports.createJob = async (req, res) => {
             return res.status(403).json({ message: `Job posting limit reached. You can only post up to ${maxJobsAllowed} jobs based on your account age.` });
         }
 
+        if (salary_min !== undefined && salary_max !== undefined && Number(salary_min) > Number(salary_max)) {
+            return res.status(400).json({ message: 'Minimum salary cannot be greater than maximum salary' });
+        }
+        if (experience_required !== undefined && Number(experience_required) > 50) {
+            return res.status(400).json({ message: 'Experience cannot exceed 50 years' });
+        }
+
         // Handle arrays (split strings if they come from textarea)
         const parseArray = (input) => {
             if (Array.isArray(input)) return input;
@@ -116,7 +123,7 @@ exports.getJobById = async (req, res) => {
             .populate('skills_required');
 
         if (job) {
-            const applicationCount = await Application.countDocuments({ job_id: req.params.id });
+            const applicationCount = await Application.countDocuments({ job_id: req.params.id, is_deleted_by_recruiter: { $ne: true } });
             res.json({ ...job.toObject(), applicationCount });
         } else {
             res.status(404).json({ message: 'Job not found' });
@@ -134,6 +141,17 @@ exports.updateJob = async (req, res) => {
         const job = await Job.findById(req.params.id);
 
         if (job) {
+            const minSal = req.body.salary_min !== undefined ? req.body.salary_min : job.salary_min;
+            const maxSal = req.body.salary_max !== undefined ? req.body.salary_max : job.salary_max;
+            if (minSal !== undefined && maxSal !== undefined && Number(minSal) > Number(maxSal)) {
+                return res.status(400).json({ message: 'Minimum salary cannot be greater than maximum salary' });
+            }
+
+            const expReq = req.body.experience_required !== undefined ? req.body.experience_required : job.experience_required;
+            if (expReq !== undefined && Number(expReq) > 50) {
+                return res.status(400).json({ message: 'Experience cannot exceed 50 years' });
+            }
+
             console.log('Update Request Body:', JSON.stringify(req.body, null, 2));
 
             // Handle arrays (split strings if they come from textarea)
@@ -202,8 +220,19 @@ exports.getAdminJobs = async (req, res) => {
             {
                 $lookup: {
                     from: 'applications',
-                    localField: '_id',
-                    foreignField: 'job_id',
+                    let: { jobId: '$_id' },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ['$job_id', '$$jobId'] },
+                                        { $ne: ['$is_deleted_by_recruiter', true] }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
                     as: 'applications'
                 }
             },
