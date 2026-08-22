@@ -169,6 +169,14 @@ const Jobs = () => {
 
     const handleApplicationSubmit = async (e) => {
         e.preventDefault();
+        if (Number(applicationForm.experience_years) > 50) {
+            setError('Experience cannot exceed 50 years');
+            return;
+        }
+        if (Number(applicationForm.experience_years) < 0) {
+            setError('Experience cannot be negative');
+            return;
+        }
         setApplying(true);
         setError('');
         try {
@@ -458,6 +466,8 @@ const Jobs = () => {
                                         <input
                                             required
                                             type="number"
+                                            min="0"
+                                            max="50"
                                             className="input-field text-left py-2 px-3"
                                             placeholder="0"
                                             value={applicationForm.experience_years}
